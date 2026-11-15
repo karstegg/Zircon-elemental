@@ -1,0 +1,460 @@
+{
+ "name": "Ladder Lead",
+ "doc": "Moog-style voice from primitives: two detuned saws and a sub sine into the LadderLP macro (4 cascaded ZDF one-poles + resonance feedback through z1). Cutoff, envelope amount, key tracking, resonance, drive; velocity scales the filter envelope and the mod wheel (CC1) opens the cutoff.",
+ "voices": 8,
+ "modules": [
+  {
+   "id": "det",
+   "type": "param",
+   "params": {
+    "name": "Detune",
+    "min": 0,
+    "max": 0.5,
+    "default": 0.1
+   }
+  },
+  {
+   "id": "cut",
+   "type": "param",
+   "params": {
+    "name": "Cutoff",
+    "min": 40,
+    "max": 12000,
+    "default": 700,
+    "curve": "exp"
+   }
+  },
+  {
+   "id": "env",
+   "type": "param",
+   "params": {
+    "name": "Env Amount",
+    "min": 0,
+    "max": 6,
+    "default": 3
+   }
+  },
+  {
+   "id": "res",
+   "type": "param",
+   "params": {
+    "name": "Resonance",
+    "min": 0,
+    "max": 3.8,
+    "default": 1.6
+   }
+  },
+  {
+   "id": "kt",
+   "type": "param",
+   "params": {
+    "name": "Key Track",
+    "min": 0,
+    "max": 1,
+    "default": 0.5
+   }
+  },
+  {
+   "id": "drive",
+   "type": "param",
+   "params": {
+    "name": "Drive",
+    "min": 0,
+    "max": 4,
+    "default": 1
+   }
+  },
+  {
+   "id": "fdec",
+   "type": "param",
+   "params": {
+    "name": "Filter Decay",
+    "min": 0.05,
+    "max": 2,
+    "default": 0.35,
+    "curve": "exp"
+   }
+  },
+  {
+   "id": "sub",
+   "type": "param",
+   "params": {
+    "name": "Sub Level",
+    "min": 0,
+    "max": 1,
+    "default": 0.5
+   }
+  },
+  {
+   "id": "g",
+   "type": "gate"
+  },
+  {
+   "id": "vel",
+   "type": "velocity"
+  },
+  {
+   "id": "v1",
+   "type": "mul",
+   "in": {
+    "b": 0.5
+   }
+  },
+  {
+   "id": "v2",
+   "type": "add",
+   "in": {
+    "b": 0.5
+   }
+  },
+  {
+   "id": "mw",
+   "type": "modwheel"
+  },
+  {
+   "id": "mwk",
+   "type": "mul",
+   "in": {
+    "b": 2
+   }
+  },
+  {
+   "id": "mw1",
+   "type": "add",
+   "in": {
+    "b": 1
+   }
+  },
+  {
+   "id": "t1",
+   "type": "add",
+   "in": {
+    "b": 0.0
+   }
+  },
+  {
+   "id": "f1",
+   "type": "NoteFreq"
+  },
+  {
+   "id": "dn",
+   "type": "neg"
+  },
+  {
+   "id": "f2",
+   "type": "NoteFreq"
+  },
+  {
+   "id": "s1",
+   "type": "Saw"
+  },
+  {
+   "id": "s2",
+   "type": "Saw"
+  },
+  {
+   "id": "fs",
+   "type": "NoteFreq"
+  },
+  {
+   "id": "fsub",
+   "type": "mul",
+   "in": {
+    "b": 0.5
+   }
+  },
+  {
+   "id": "so",
+   "type": "SineOsc"
+  },
+  {
+   "id": "sg",
+   "type": "mul"
+  },
+  {
+   "id": "mix",
+   "type": "mul",
+   "in": {
+    "b": 0.35
+   }
+  },
+  {
+   "id": "dr1",
+   "type": "add",
+   "in": {
+    "b": 1
+   }
+  },
+  {
+   "id": "pre",
+   "type": "mul"
+  },
+  {
+   "id": "fenv",
+   "type": "adsr",
+   "in": {
+    "a": 0.002,
+    "s": 0.2,
+    "r": 0.2
+   }
+  },
+  {
+   "id": "em",
+   "type": "mul"
+  },
+  {
+   "id": "emv",
+   "type": "mul"
+  },
+  {
+   "id": "em1",
+   "type": "add",
+   "in": {
+    "b": 1
+   }
+  },
+  {
+   "id": "fr",
+   "type": "div",
+   "in": {
+    "b": 261.63
+   }
+  },
+  {
+   "id": "ktr",
+   "type": "pow"
+  },
+  {
+   "id": "c1",
+   "type": "mul"
+  },
+  {
+   "id": "c2",
+   "type": "mul"
+  },
+  {
+   "id": "c3",
+   "type": "mul"
+  },
+  {
+   "id": "fc",
+   "type": "clip",
+   "in": {
+    "lo": 20,
+    "hi": 16000
+   }
+  },
+  {
+   "id": "lad",
+   "type": "LadderLP"
+  },
+  {
+   "id": "aenv",
+   "type": "adsr",
+   "in": {
+    "a": 0.003,
+    "d": 0.3,
+    "s": 0.8,
+    "r": 0.2
+   }
+  },
+  {
+   "id": "vca",
+   "type": "mul"
+  },
+  {
+   "id": "lvl",
+   "type": "mul",
+   "in": {
+    "b": 0.38
+   }
+  },
+  {
+   "id": "sat",
+   "type": "tanh"
+  }
+ ],
+ "wires": [
+  [
+   "vel",
+   "v1.a"
+  ],
+  [
+   "v1",
+   "v2.a"
+  ],
+  [
+   "mw",
+   "mwk.a"
+  ],
+  [
+   "mwk",
+   "mw1.a"
+  ],
+  [
+   "det",
+   "t1.a"
+  ],
+  [
+   "t1",
+   "f1.transpose"
+  ],
+  [
+   "det",
+   "dn.in"
+  ],
+  [
+   "dn",
+   "f2.transpose"
+  ],
+  [
+   "f1",
+   "s1.freq"
+  ],
+  [
+   "f2",
+   "s2.freq"
+  ],
+  [
+   "fs",
+   "fsub.a"
+  ],
+  [
+   "fsub",
+   "so.freq"
+  ],
+  [
+   "so",
+   "sg.a"
+  ],
+  [
+   "sub",
+   "sg.b"
+  ],
+  [
+   "s1",
+   "mix.a"
+  ],
+  [
+   "s2",
+   "mix.a"
+  ],
+  [
+   "sg",
+   "mix.a"
+  ],
+  [
+   "drive",
+   "dr1.a"
+  ],
+  [
+   "mix",
+   "pre.a"
+  ],
+  [
+   "dr1",
+   "pre.b"
+  ],
+  [
+   "g",
+   "fenv.gate"
+  ],
+  [
+   "fdec",
+   "fenv.d"
+  ],
+  [
+   "fenv",
+   "em.a"
+  ],
+  [
+   "env",
+   "em.b"
+  ],
+  [
+   "em",
+   "emv.a"
+  ],
+  [
+   "v2",
+   "emv.b"
+  ],
+  [
+   "emv",
+   "em1.a"
+  ],
+  [
+   "fs",
+   "fr.a"
+  ],
+  [
+   "fr",
+   "ktr.a"
+  ],
+  [
+   "kt",
+   "ktr.b"
+  ],
+  [
+   "cut",
+   "c1.a"
+  ],
+  [
+   "em1",
+   "c1.b"
+  ],
+  [
+   "c1",
+   "c2.a"
+  ],
+  [
+   "ktr",
+   "c2.b"
+  ],
+  [
+   "c2",
+   "c3.a"
+  ],
+  [
+   "mw1",
+   "c3.b"
+  ],
+  [
+   "c3",
+   "fc.in"
+  ],
+  [
+   "pre",
+   "lad.in"
+  ],
+  [
+   "fc",
+   "lad.cutoff"
+  ],
+  [
+   "res",
+   "lad.res"
+  ],
+  [
+   "g",
+   "aenv.gate"
+  ],
+  [
+   "lad",
+   "vca.a"
+  ],
+  [
+   "aenv",
+   "vca.b"
+  ],
+  [
+   "vca",
+   "lvl.a"
+  ],
+  [
+   "lvl",
+   "sat.in"
+  ]
+ ],
+ "out": "sat.out"
+}

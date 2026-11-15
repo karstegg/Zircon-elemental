@@ -1,0 +1,402 @@
+{
+ "name": "DX Classic E-Piano",
+ "doc": "DX-style 4-operator FM electric piano from primitives. Two operator pairs (tine 14:1 with a fast-decaying index, body 1:1 with self-feedback), velocity-scaled indices, mod wheel (CC1) opens the tine. Every operator is a SineOsc macro with phase-modulation input.",
+ "voices": 8,
+ "modules": [
+  {
+   "id": "f",
+   "type": "NoteFreq"
+  },
+  {
+   "id": "g",
+   "type": "gate"
+  },
+  {
+   "id": "vel",
+   "type": "velocity"
+  },
+  {
+   "id": "v1",
+   "type": "mul",
+   "in": {
+    "b": 0.65
+   }
+  },
+  {
+   "id": "v2",
+   "type": "add",
+   "in": {
+    "b": 0.35
+   }
+  },
+  {
+   "id": "mw",
+   "type": "modwheel"
+  },
+  {
+   "id": "mwk",
+   "type": "mul",
+   "in": {
+    "b": 2
+   }
+  },
+  {
+   "id": "mw1",
+   "type": "add",
+   "in": {
+    "b": 1
+   }
+  },
+  {
+   "id": "tine",
+   "type": "param",
+   "params": {
+    "name": "Tine",
+    "min": 0,
+    "max": 3,
+    "default": 0.45
+   }
+  },
+  {
+   "id": "body",
+   "type": "param",
+   "params": {
+    "name": "Body",
+    "min": 0,
+    "max": 3,
+    "default": 0.5
+   }
+  },
+  {
+   "id": "fbk",
+   "type": "param",
+   "params": {
+    "name": "Feedback",
+    "min": 0,
+    "max": 0.6,
+    "default": 0.08
+   }
+  },
+  {
+   "id": "rat",
+   "type": "param",
+   "params": {
+    "name": "Tine Ratio",
+    "min": 1,
+    "max": 20,
+    "default": 14
+   }
+  },
+  {
+   "id": "rel",
+   "type": "param",
+   "params": {
+    "name": "Release",
+    "min": 0.1,
+    "max": 3,
+    "default": 0.7,
+    "curve": "exp"
+   }
+  },
+  {
+   "id": "m1f",
+   "type": "mul"
+  },
+  {
+   "id": "m1",
+   "type": "SineOsc"
+  },
+  {
+   "id": "m1e",
+   "type": "adsr",
+   "in": {
+    "a": 0.001,
+    "d": 0.18,
+    "s": 0.0,
+    "r": 0.1
+   }
+  },
+  {
+   "id": "m1o",
+   "type": "mul"
+  },
+  {
+   "id": "t1",
+   "type": "mul"
+  },
+  {
+   "id": "t2",
+   "type": "mul"
+  },
+  {
+   "id": "m1i",
+   "type": "mul"
+  },
+  {
+   "id": "c1",
+   "type": "SineOsc"
+  },
+  {
+   "id": "a1e",
+   "type": "adsr",
+   "in": {
+    "a": 0.001,
+    "d": 2.2,
+    "s": 0.0
+   }
+  },
+  {
+   "id": "c1o",
+   "type": "mul"
+  },
+  {
+   "id": "m2",
+   "type": "SineOsc"
+  },
+  {
+   "id": "fbz",
+   "type": "z1"
+  },
+  {
+   "id": "fbm",
+   "type": "mul"
+  },
+  {
+   "id": "m2e",
+   "type": "adsr",
+   "in": {
+    "a": 0.002,
+    "d": 1.4,
+    "s": 0.25,
+    "r": 0.5
+   }
+  },
+  {
+   "id": "m2o",
+   "type": "mul"
+  },
+  {
+   "id": "b1",
+   "type": "mul"
+  },
+  {
+   "id": "m2i",
+   "type": "mul"
+  },
+  {
+   "id": "c2",
+   "type": "SineOsc"
+  },
+  {
+   "id": "a2e",
+   "type": "adsr",
+   "in": {
+    "a": 0.002,
+    "d": 3.5,
+    "s": 0.12
+   }
+  },
+  {
+   "id": "c2o",
+   "type": "mul"
+  },
+  {
+   "id": "mix",
+   "type": "mul",
+   "in": {
+    "b": 0.22
+   }
+  },
+  {
+   "id": "vk",
+   "type": "mul"
+  },
+  {
+   "id": "sat",
+   "type": "tanh"
+  }
+ ],
+ "wires": [
+  [
+   "vel",
+   "v1.a"
+  ],
+  [
+   "v1",
+   "v2.a"
+  ],
+  [
+   "mw",
+   "mwk.a"
+  ],
+  [
+   "mwk",
+   "mw1.a"
+  ],
+  [
+   "f",
+   "m1f.a"
+  ],
+  [
+   "rat",
+   "m1f.b"
+  ],
+  [
+   "m1f",
+   "m1.freq"
+  ],
+  [
+   "g",
+   "m1e.gate"
+  ],
+  [
+   "m1",
+   "m1o.a"
+  ],
+  [
+   "m1e",
+   "m1o.b"
+  ],
+  [
+   "tine",
+   "t1.a"
+  ],
+  [
+   "v2",
+   "t1.b"
+  ],
+  [
+   "t1",
+   "t2.a"
+  ],
+  [
+   "mw1",
+   "t2.b"
+  ],
+  [
+   "m1o",
+   "m1i.a"
+  ],
+  [
+   "t2",
+   "m1i.b"
+  ],
+  [
+   "f",
+   "c1.freq"
+  ],
+  [
+   "m1i",
+   "c1.pm"
+  ],
+  [
+   "g",
+   "a1e.gate"
+  ],
+  [
+   "rel",
+   "a1e.r"
+  ],
+  [
+   "c1",
+   "c1o.a"
+  ],
+  [
+   "a1e",
+   "c1o.b"
+  ],
+  [
+   "f",
+   "m2.freq"
+  ],
+  [
+   "m2",
+   "fbz.in"
+  ],
+  [
+   "fbz",
+   "fbm.a"
+  ],
+  [
+   "fbk",
+   "fbm.b"
+  ],
+  [
+   "fbm",
+   "m2.pm"
+  ],
+  [
+   "g",
+   "m2e.gate"
+  ],
+  [
+   "m2",
+   "m2o.a"
+  ],
+  [
+   "m2e",
+   "m2o.b"
+  ],
+  [
+   "body",
+   "b1.a"
+  ],
+  [
+   "v2",
+   "b1.b"
+  ],
+  [
+   "m2o",
+   "m2i.a"
+  ],
+  [
+   "b1",
+   "m2i.b"
+  ],
+  [
+   "f",
+   "c2.freq"
+  ],
+  [
+   "m2i",
+   "c2.pm"
+  ],
+  [
+   "g",
+   "a2e.gate"
+  ],
+  [
+   "rel",
+   "a2e.r"
+  ],
+  [
+   "c2",
+   "c2o.a"
+  ],
+  [
+   "a2e",
+   "c2o.b"
+  ],
+  [
+   "c1o",
+   "mix.a"
+  ],
+  [
+   "c2o",
+   "mix.a"
+  ],
+  [
+   "mix",
+   "vk.a"
+  ],
+  [
+   "v2",
+   "vk.b"
+  ],
+  [
+   "vk",
+   "sat.in"
+  ]
+ ],
+ "out": "sat.out"
+}

@@ -34,6 +34,42 @@ static void test(const char* name, std::function<void()> f) {
 int main() {
     auto L = lib();
 
+    test("showcase: DX e-piano is bounded, decays, and Tine brightens it", [&] {
+        auto run = [&](float tine) {
+            Engine e(compilePatchFile(ZIRCON_SOURCE_DIR "/patches/09-dx-epiano.json", L));
+            e.prepare(48000); e.setParam(e.findParam("Tine"), tine); e.noteOn(60, 1.f);
+            auto x = render(e, 48000); e.noteOff(60);
+            auto y = render(e, 48000 * 6);
+            double hf = 0, tail = 0; float pk = 0;
+            for (size_t i = 1; i < x.size(); ++i) { double d = x[i] - x[i - 1]; hf += d * d; pk = std::max(pk, std::fabs(x[i])); }
+            for (size_t i = y.size() - 4800; i < y.size(); ++i) tail += y[i] * y[i];
+            CHECK(std::isfinite(hf) && pk < 1.0f && pk > 0.05f);
+            CHECK(tail / 4800 < 1e-6);        // fully released by 6 s
+            return hf;
+        };
+        CHECK(run(2.5f) > 2.0 * run(0.2f));
+    });
+
+    test("showcase: ladder filter is stable at max resonance, tracks cutoff, voices free", [&] {
+        auto run = [&](float cutoff, float res) {
+            Engine e(compilePatchFile(ZIRCON_SOURCE_DIR "/patches/10-ladder-lead.json", L));
+            e.prepare(48000);
+            e.setParam(e.findParam("Cutoff"), cutoff); e.setParam(e.findParam("Resonance"), res);
+            e.setParam(e.findParam("Env Amount"), 0.f);
+            e.noteOn(48, 1.f); e.noteOn(55, 1.f);
+            auto x = render(e, 48000 * 2);
+            double hf = 0; float pk = 0;
+            for (size_t i = 1; i < x.size(); ++i) { double d = x[i] - x[i - 1]; hf += d * d; pk = std::max(pk, std::fabs(x[i])); }
+            CHECK(std::isfinite(hf) && pk <= 1.0f);
+            e.noteOff(48); e.noteOff(55); render(e, 48000 * 3);
+            CHECK(e.activeVoices() == 0);
+            return hf;
+        };
+        double dark = run(150.f, 0.5f), open = run(6000.f, 0.5f);
+        CHECK(open > 5.0 * dark);
+        run(1500.f, 3.8f);                    // self-oscillation region must stay bounded
+    });
+
     test("mod wheel brightens the FM bell", [&] {
         auto energy = [&](float mw) {
             Engine e(compilePatchFile(ZIRCON_SOURCE_DIR "/patches/03-fm-bell.json", L));

@@ -1,0 +1,113 @@
+{
+ "name": "LadderLP",
+ "doc": "Moog-style 4-pole lowpass: four cascaded ZDF one-poles, resonance feedback from the last pole through a unit delay (z1), tanh saturation at the input. res 0..~4 (self-oscillates near 4). The unit delay in the feedback path slightly detunes the resonance at very high cutoffs.",
+ "inputs": [
+  {
+   "name": "in",
+   "default": 0
+  },
+  {
+   "name": "cutoff",
+   "default": 1000
+  },
+  {
+   "name": "res",
+   "default": 0
+  }
+ ],
+ "outputs": {
+  "out": "lp4.out"
+ },
+ "modules": [
+  {
+   "id": "fbz",
+   "type": "z1"
+  },
+  {
+   "id": "fbm",
+   "type": "mul"
+  },
+  {
+   "id": "err",
+   "type": "sub"
+  },
+  {
+   "id": "sat",
+   "type": "tanh"
+  },
+  {
+   "id": "lp1",
+   "type": "OnePoleLP"
+  },
+  {
+   "id": "lp2",
+   "type": "OnePoleLP"
+  },
+  {
+   "id": "lp3",
+   "type": "OnePoleLP"
+  },
+  {
+   "id": "lp4",
+   "type": "OnePoleLP"
+  }
+ ],
+ "wires": [
+  [
+   "$in",
+   "err.a"
+  ],
+  [
+   "fbm",
+   "err.b"
+  ],
+  [
+   "err",
+   "sat.in"
+  ],
+  [
+   "sat",
+   "lp1.in"
+  ],
+  [
+   "$cutoff",
+   "lp1.cutoff"
+  ],
+  [
+   "lp1",
+   "lp2.in"
+  ],
+  [
+   "$cutoff",
+   "lp2.cutoff"
+  ],
+  [
+   "lp2",
+   "lp3.in"
+  ],
+  [
+   "$cutoff",
+   "lp3.cutoff"
+  ],
+  [
+   "lp3",
+   "lp4.in"
+  ],
+  [
+   "$cutoff",
+   "lp4.cutoff"
+  ],
+  [
+   "lp4",
+   "fbz.in"
+  ],
+  [
+   "fbz",
+   "fbm.a"
+  ],
+  [
+   "$res",
+   "fbm.b"
+  ]
+ ]
+}
