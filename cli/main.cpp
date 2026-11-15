@@ -7,6 +7,7 @@
 #include "json.hpp"
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -114,7 +115,7 @@ int main(int argc, char** argv) {
         if (!scorePath.empty()) {
             std::ifstream f(scorePath); json j = json::parse(f);
             length = j.value("length", 4.0);
-            for (auto& n : j["notes"]) score.push_back({n[0], n[1], n[2], n.size() > 3 ? n[3].get<float>() : 0.8f});
+            for (auto& n : j["notes"]) score.push_back({n[0].get<double>(), n[1].get<double>(), n[2].get<int>(), n.size() > 3 ? n[3].get<float>() : 0.8f});
         } else score = defaultScore(length);
         if (seconds > 0) length = seconds;
 

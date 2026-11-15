@@ -1,0 +1,74 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows
+            os: windows-latest
+            extra: ""
+          - name: macos
+            os: macos-latest
+            extra: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+          - name: linux
+            os: ubuntu-24.04
+            extra: ""
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Linux deps
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libx11-dev libxrandr-dev libxinerama-dev \
+            libxcursor-dev libxext-dev libfreetype-dev libfontconfig1-dev libgl1-mesa-dev
+
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DZIRCON_BUILD_PLUGIN=ON ${{ matrix.extra }}
+
+      - name: Build core + tests
+        run: cmake --build build --config Release --target zircon zircon_tests --parallel
+
+      - name: Test
+        run: ctest --test-dir build -C Release --output-on-failure
+
+      - name: Build plugin
+        run: cmake --build build --config Release --target ZirconElemental_VST3 ZirconElemental_Standalone --parallel
+
+      - name: Render demo patches
+        shell: bash
+        run: |
+          BIN=$(find build -type f \( -name zircon -o -name zircon.exe \) | head -1)
+          mkdir -p renders
+          for p in patches/*.json; do "$BIN" render "$p" "renders/$(basename "$p" .json).wav"; done
+
+      - name: Package
+        shell: bash
+        run: |
+          ART=$(find build -type d -name ZirconElemental_artefacts | head -1)
+          mkdir -p dist
+          cp -R "$ART"/Release/VST3/*.vst3 dist/
+          cp -R "$ART"/Release/Standalone/* dist/ 2>/dev/null || true
+          cp README.md LICENSE dist/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ZirconElemental-${{ matrix.name }}
+          path: dist
+
+      - uses: actions/upload-artifact@v4
+        if: runner.os == 'Linux'
+        with:
+          name: demo-renders
+          path: renders
