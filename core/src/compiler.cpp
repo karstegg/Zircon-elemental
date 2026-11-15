@@ -1,4 +1,4 @@
-#include "primal/compiler.hpp"
+#include "zircon/compiler.hpp"
 #include "json.hpp"
 #include <cmath>
 #include <filesystem>
@@ -13,7 +13,7 @@
 using nlohmann::json;
 namespace fs = std::filesystem;
 
-namespace primal {
+namespace zircon {
 
 // ---------------------------------------------------------------- params
 float ParamInfo::fromNormalized(float x) const {
@@ -429,4 +429,4 @@ Program compilePatchFile(const std::string& path, const MacroLibrary& lib) {
     return compilePatch(ss.str(), lib);
 }
 
-} // namespace primal
+} // namespace zircon

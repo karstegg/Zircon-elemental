@@ -1,14 +1,14 @@
-// Primal Modular — runtime engine.
+// Zircon Elemental — runtime engine.
 // Runs a compiled Program sample by sample. Every register holds one
 // float per voice lane, so each instruction is a tight loop across voices
 // (auto-vectorised by the compiler; explicit SIMD later).
 #pragma once
-#include "primal/compiler.hpp"
+#include "zircon/compiler.hpp"
 #include <cstdint>
 #include <memory>
 #include <vector>
 
-namespace primal {
+namespace zircon {
 
 class Engine {
 public:
@@ -54,4 +54,4 @@ private:
     float bend_ = 0.f;
 };
 
-} // namespace primal
+} // namespace zircon

@@ -1,9 +1,9 @@
-// primal — command-line front end for the engine.
-//   primal modules                         list native primitives + library macros
-//   primal info   <patch.json>             compile and show params / program stats
-//   primal render <patch.json> <out.wav> [--score s.json] [--set Name=value] [--sr 48000] [--seconds N]
-#include "primal/compiler.hpp"
-#include "primal/engine.hpp"
+// zircon — command-line front end for the engine.
+//   zircon modules                         list native primitives + library macros
+//   zircon info   <patch.json>             compile and show params / program stats
+//   zircon render <patch.json> <out.wav> [--score s.json] [--set Name=value] [--sr 48000] [--seconds N]
+#include "zircon/compiler.hpp"
+#include "zircon/engine.hpp"
 #include "json.hpp"
 #include <algorithm>
 #include <chrono>
@@ -15,13 +15,13 @@
 #include <iostream>
 #include <sstream>
 
-using namespace primal;
+using namespace zircon;
 using nlohmann::json;
 
 static std::string defaultLibDir(const char* argv0) {
     namespace fs = std::filesystem;
     for (fs::path p : {fs::path("library"), fs::weakly_canonical(fs::path(argv0)).parent_path() / "../library",
-                       fs::path(PRIMAL_SOURCE_DIR) / "library"})
+                       fs::path(ZIRCON_SOURCE_DIR) / "library"})
         if (fs::exists(p)) return p.string();
     return "library";
 }
@@ -55,7 +55,7 @@ static std::vector<Note> defaultScore(double& length) {
 
 int main(int argc, char** argv) {
     if (argc < 2) {
-        std::cerr << "usage: primal modules | info <patch> | render <patch> <out.wav> [--score f] [--set k=v] [--sr n] [--seconds n] [--lib dir]\n";
+        std::cerr << "usage: zircon modules | info <patch> | render <patch> <out.wav> [--score f] [--set k=v] [--sr n] [--seconds n] [--lib dir]\n";
         return 1;
     }
     std::string cmd = argv[1];

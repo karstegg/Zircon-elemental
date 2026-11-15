@@ -1,15 +1,15 @@
-// Primal Modular — patch compiler.
+// Zircon Elemental — patch compiler.
 // Turns a JSON patch (modules + wires + macros) into a flat, ordered
 // program of register instructions that the Engine runs per sample,
 // vectorised across voices.
 #pragma once
-#include "primal/ops.hpp"
+#include "zircon/ops.hpp"
 #include <map>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
-namespace primal {
+namespace zircon {
 
 constexpr int kMaxLanes = 16;   // max polyphony (voice lanes)
 constexpr int kMaxIn = 5;
@@ -66,4 +66,4 @@ private:
 Program compilePatch(const std::string& patchJson, const MacroLibrary& lib);
 Program compilePatchFile(const std::string& path, const MacroLibrary& lib);
 
-} // namespace primal
+} // namespace zircon

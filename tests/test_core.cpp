@@ -1,18 +1,18 @@
 // Minimal self-contained test runner for the core engine.
-#include "primal/compiler.hpp"
-#include "primal/engine.hpp"
+#include "zircon/compiler.hpp"
+#include "zircon/engine.hpp"
 #include <cmath>
 #include <cstdio>
 #include <functional>
 #include <string>
 #include <vector>
 
-using namespace primal;
+using namespace zircon;
 
 static int failures = 0;
 #define CHECK(cond) do { if (!(cond)) { printf("    FAIL %s:%d  %s\n", __FILE__, __LINE__, #cond); ++failures; } } while (0)
 
-static MacroLibrary lib() { MacroLibrary l; l.loadDirectory(PRIMAL_SOURCE_DIR "/library/macros"); return l; }
+static MacroLibrary lib() { MacroLibrary l; l.loadDirectory(ZIRCON_SOURCE_DIR "/library/macros"); return l; }
 
 static std::vector<float> render(Engine& e, int n) {
     std::vector<float> L(n), R(n); e.process(L.data(), R.data(), n); return L;
@@ -35,7 +35,7 @@ int main() {
     auto L = lib();
 
     test("primitive sine oscillates at 440 Hz for note 69", [&] {
-        Engine e(compilePatchFile(PRIMAL_SOURCE_DIR "/patches/01-primitive-sine.json", L));
+        Engine e(compilePatchFile(ZIRCON_SOURCE_DIR "/patches/01-primitive-sine.json", L));
         e.prepare(48000); e.noteOn(69, 1.f);
         auto x = render(e, 48000);
         double f = zeroCrossFreq(x, 4800, 48000);
@@ -77,13 +77,13 @@ int main() {
     });
 
     test("nested + local macros flatten (pad patch compiles, stereo)", [&] {
-        auto prog = compilePatchFile(PRIMAL_SOURCE_DIR "/patches/05-svf-pad.json", L);
+        auto prog = compilePatchFile(ZIRCON_SOURCE_DIR "/patches/05-svf-pad.json", L);
         CHECK(prog.outL != prog.outR);
         CHECK(prog.params.size() == 3);
     });
 
     test("polyphony: 3 notes sum, voices free after release", [&] {
-        Engine e(compilePatchFile(PRIMAL_SOURCE_DIR "/patches/01-primitive-sine.json", L));
+        Engine e(compilePatchFile(ZIRCON_SOURCE_DIR "/patches/01-primitive-sine.json", L));
         e.prepare(48000);
         for (int n : {60, 64, 67}) e.noteOn(n, 1.f);
         render(e, 4800);
@@ -94,7 +94,7 @@ int main() {
     });
 
     test("voice stealing beyond polyphony", [&] {
-        Engine e(compilePatchFile(PRIMAL_SOURCE_DIR "/patches/01-primitive-sine.json", L));
+        Engine e(compilePatchFile(ZIRCON_SOURCE_DIR "/patches/01-primitive-sine.json", L));
         e.prepare(48000);
         for (int n = 40; n < 60; ++n) e.noteOn(n, 1.f);
         render(e, 64);
@@ -108,7 +108,7 @@ int main() {
     });
 
     test("karplus pluck pitch follows note (A3 = 220 Hz)", [&] {
-        Engine e(compilePatchFile(PRIMAL_SOURCE_DIR "/patches/04-karplus-pluck.json", L));
+        Engine e(compilePatchFile(ZIRCON_SOURCE_DIR "/patches/04-karplus-pluck.json", L));
         e.prepare(48000); e.noteOn(57, 1.f);
         auto x = render(e, 24000);
         // autocorrelation peak near 48000/220 = 218 samples

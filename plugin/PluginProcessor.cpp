@@ -2,7 +2,7 @@
 #include "PluginEditor.h"
 #include "BinaryData.h"
 
-PrimalProcessor::PrimalProcessor()
+ZirconProcessor::ZirconProcessor()
     : AudioProcessor(BusesProperties().withOutput("Output", juce::AudioChannelSet::stereo(), true)) {
     for (int i = 0; i < kHostParams; ++i) {
         auto* p = new juce::AudioParameterFloat(juce::ParameterID{"p" + juce::String(i + 1), 1},
@@ -28,21 +28,21 @@ PrimalProcessor::PrimalProcessor()
     if (!factory_.isEmpty()) loadPatchText(factory_[0].json);
 }
 
-bool PrimalProcessor::isBusesLayoutSupported(const BusesLayout& l) const {
+bool ZirconProcessor::isBusesLayoutSupported(const BusesLayout& l) const {
     return l.getMainOutputChannelSet() == juce::AudioChannelSet::stereo();
 }
 
-void PrimalProcessor::prepareToPlay(double sr, int) {
+void ZirconProcessor::prepareToPlay(double sr, int) {
     sampleRate_ = sr;
     const juce::SpinLock::ScopedLockType sl(lock_);
     if (engine_) engine_->prepare(sr);
 }
 
-juce::String PrimalProcessor::loadPatchText(const juce::String& json) {
-    std::shared_ptr<primal::Engine> fresh;
+juce::String ZirconProcessor::loadPatchText(const juce::String& json) {
+    std::shared_ptr<zircon::Engine> fresh;
     try {
-        auto prog = primal::compilePatch(json.toStdString(), lib_);
-        fresh = std::make_shared<primal::Engine>(std::move(prog));
+        auto prog = zircon::compilePatch(json.toStdString(), lib_);
+        fresh = std::make_shared<zircon::Engine>(std::move(prog));
         fresh->prepare(sampleRate_);
     } catch (const std::exception& e) {
         lastError_ = e.what();
@@ -67,31 +67,31 @@ juce::String PrimalProcessor::loadPatchText(const juce::String& json) {
     return {};
 }
 
-juce::String PrimalProcessor::loadPatchFile(const juce::File& f) {
+juce::String ZirconProcessor::loadPatchFile(const juce::File& f) {
     if (!f.existsAsFile()) return lastError_ = "file not found";
     return loadPatchText(f.loadFileAsString());
 }
 
-void PrimalProcessor::setCurrentProgram(int index) {
+void ZirconProcessor::setCurrentProgram(int index) {
     if (index < 0 || index >= factory_.size()) return;
     currentProgram_ = index;
     loadPatchText(factory_[index].json);
 }
-const juce::String PrimalProcessor::getProgramName(int index) {
+const juce::String ZirconProcessor::getProgramName(int index) {
     return juce::isPositiveAndBelow(index, factory_.size()) ? factory_[index].name : juce::String();
 }
 
-juce::String PrimalProcessor::patchName() const {
+juce::String ZirconProcessor::patchName() const {
     return engine_ ? juce::String(engine_->program().name) : "(none)";
 }
-int PrimalProcessor::mappedParamCount() const {
+int ZirconProcessor::mappedParamCount() const {
     return engine_ ? std::min(kHostParams, engine_->numParams()) : 0;
 }
-juce::String PrimalProcessor::mappedParamName(int slot) const {
+juce::String ZirconProcessor::mappedParamName(int slot) const {
     return engine_ && slot < engine_->numParams() ? juce::String(engine_->paramInfo(slot).name) : juce::String();
 }
 
-void PrimalProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi) {
+void ZirconProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi) {
     juce::ScopedNoDenormals noDenormals;
     buffer.clear();
     const juce::SpinLock::ScopedTryLockType sl(lock_);
@@ -120,8 +120,8 @@ void PrimalProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
     peak_ = std::max(buffer.getMagnitude(0, 0, n), peak_.load() * 0.9f);
 }
 
-void PrimalProcessor::getStateInformation(juce::MemoryBlock& dest) {
-    juce::ValueTree st("PrimalState");
+void ZirconProcessor::getStateInformation(juce::MemoryBlock& dest) {
+    juce::ValueTree st("ZirconState");
     st.setProperty("patch", patchText_, nullptr);
     st.setProperty("program", currentProgram_, nullptr);
     for (int i = 0; i < kHostParams; ++i) st.setProperty("p" + juce::String(i + 1), hostParams_[i]->getValue(), nullptr);
@@ -129,7 +129,7 @@ void PrimalProcessor::getStateInformation(juce::MemoryBlock& dest) {
     st.writeToStream(os);
 }
 
-void PrimalProcessor::setStateInformation(const void* data, int size) {
+void ZirconProcessor::setStateInformation(const void* data, int size) {
     auto st = juce::ValueTree::readFromData(data, (size_t)size);
     if (!st.isValid()) return;
     currentProgram_ = st.getProperty("program", 0);
@@ -139,5 +139,5 @@ void PrimalProcessor::setStateInformation(const void* data, int size) {
             hostParams_[i]->setValueNotifyingHost(st.getProperty("p" + juce::String(i + 1)));
 }
 
-juce::AudioProcessorEditor* PrimalProcessor::createEditor() { return new PrimalEditor(*this); }
-juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter() { return new PrimalProcessor(); }
+juce::AudioProcessorEditor* ZirconProcessor::createEditor() { return new ZirconEditor(*this); }
+juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter() { return new ZirconProcessor(); }

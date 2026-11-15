@@ -5,7 +5,7 @@ const juce::Colour bg{0xff111318}, panel{0xff1a1d24}, edge{0xff2a2f3a}, text{0xf
     dim{0xff8a90a0}, accent{0xffff8a3d}, ok{0xff5ad19a}, err{0xffff5a6a};
 }
 
-PrimalLook::PrimalLook() {
+ZirconLook::ZirconLook() {
     setColour(juce::ComboBox::backgroundColourId, col::panel);
     setColour(juce::ComboBox::outlineColourId, col::edge);
     setColour(juce::ComboBox::textColourId, col::text);
@@ -18,7 +18,7 @@ PrimalLook::PrimalLook() {
     setColour(juce::Slider::textBoxOutlineColourId, juce::Colours::transparentBlack);
 }
 
-void PrimalLook::drawRotarySlider(juce::Graphics& g, int x, int y, int w, int h, float pos, float a0, float a1,
+void ZirconLook::drawRotarySlider(juce::Graphics& g, int x, int y, int w, int h, float pos, float a0, float a1,
                                   juce::Slider&) {
     auto r = juce::Rectangle<float>((float)x, (float)y, (float)w, (float)h).reduced(6.f);
     float d = std::min(r.getWidth(), r.getHeight());
@@ -39,7 +39,7 @@ void PrimalLook::drawRotarySlider(juce::Graphics& g, int x, int y, int w, int h,
     g.drawLine({inner.getCentre().getPointOnCircumference(inner.getWidth() * 0.15f, ang), tip}, 2.5f);
 }
 
-PrimalEditor::PrimalEditor(PrimalProcessor& p) : AudioProcessorEditor(p), proc_(p) {
+ZirconEditor::ZirconEditor(ZirconProcessor& p) : AudioProcessorEditor(p), proc_(p) {
     setLookAndFeel(&look_);
     for (int i = 0; i < proc_.getNumPrograms(); ++i) presets_.addItem(proc_.getProgramName(i), i + 1);
     presets_.setSelectedId(proc_.getCurrentProgram() + 1, juce::dontSendNotification);
@@ -47,7 +47,7 @@ PrimalEditor::PrimalEditor(PrimalProcessor& p) : AudioProcessorEditor(p), proc_(
     addAndMakeVisible(presets_);
 
     load_.onClick = [this] {
-        chooser_ = std::make_unique<juce::FileChooser>("Load Primal patch", juce::File(), "*.json");
+        chooser_ = std::make_unique<juce::FileChooser>("Load Zircon patch", juce::File(), "*.json");
         chooser_->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                               [this](const juce::FileChooser& fc) {
                                   auto f = fc.getResult();
@@ -73,12 +73,12 @@ PrimalEditor::PrimalEditor(PrimalProcessor& p) : AudioProcessorEditor(p), proc_(
     startTimerHz(15);
 }
 
-PrimalEditor::~PrimalEditor() {
+ZirconEditor::~ZirconEditor() {
     proc_.onPatchChanged = nullptr;
     setLookAndFeel(nullptr);
 }
 
-void PrimalEditor::rebuildKnobs() {
+void ZirconEditor::rebuildKnobs() {
     knobs_.clear();
     for (int i = 0; i < proc_.mappedParamCount(); ++i) {
         auto k = std::make_unique<Knob>();
@@ -96,16 +96,16 @@ void PrimalEditor::rebuildKnobs() {
     repaint();
 }
 
-void PrimalEditor::paint(juce::Graphics& g) {
+void ZirconEditor::paint(juce::Graphics& g) {
     g.fillAll(col::bg);
     auto b = getLocalBounds().reduced(14);
     auto head = b.removeFromTop(48);
     g.setColour(col::text);
     g.setFont(juce::FontOptions(22.f, juce::Font::bold));
-    g.drawText("PRIMAL", head.removeFromLeft(110), juce::Justification::centredLeft);
+    g.drawText("ZIRCON", head.removeFromLeft(110), juce::Justification::centredLeft);
     g.setColour(col::accent);
     g.setFont(juce::FontOptions(13.f));
-    g.drawText("MODULAR v0", head.removeFromLeft(90), juce::Justification::centredLeft);
+    g.drawText("ELEMENTAL v0", head.removeFromLeft(90), juce::Justification::centredLeft);
 
     b.removeFromTop(8);
     auto panel = b.withTrimmedBottom(26);
@@ -129,7 +129,7 @@ void PrimalEditor::paint(juce::Graphics& g) {
     g.fillRoundedRectangle(meter.withTrimmedTop(meter.getHeight() * (1.f - lv)), 3.f);
 }
 
-void PrimalEditor::resized() {
+void ZirconEditor::resized() {
     auto b = getLocalBounds().reduced(14);
     auto head = b.removeFromTop(48);
     head.removeFromLeft(210);
@@ -154,7 +154,7 @@ void PrimalEditor::resized() {
     }
 }
 
-void PrimalEditor::timerCallback() {
+void ZirconEditor::timerCallback() {
     status_.setText(juce::String(proc_.activeVoices()) + " voices", juce::dontSendNotification);
     repaint();
 }

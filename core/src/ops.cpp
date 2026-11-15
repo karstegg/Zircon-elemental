@@ -1,6 +1,6 @@
-#include "primal/ops.hpp"
+#include "zircon/ops.hpp"
 
-namespace primal {
+namespace zircon {
 
 const std::vector<OpSpec>& opCatalogue() {
     static const std::vector<OpSpec> cat = {
@@ -54,4 +54,4 @@ const OpSpec* findOp(const std::string& type) {
     return it == idx.end() ? nullptr : it->second;
 }
 
-} // namespace primal
+} // namespace zircon

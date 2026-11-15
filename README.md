@@ -1,4 +1,6 @@
-# Primal Modular *(working title)*
+# Zircon Elemental
+
+*Zircon* for the crystal: hard, precise, among the oldest minerals on Earth. *Elemental* for the idea: everything is built from elements, from math primitives up to instruments.
 
 An open-source modular DSP environment in the spirit of **SynC Modular** (Dr SynC, 1999–2003):
 build *any* audio software from math primitives, or patch premade modules and macros, then run it
@@ -27,11 +29,11 @@ Rendering runs 40–140× realtime per patch with 8 voices on one core, before a
 
 ```bash
 cmake -S . -B build -G Ninja                       # core + CLI + tests
-cmake --build build && ./build/primal_tests
-./build/primal render patches/03-fm-bell.json bell.wav --set Ratio=1.41
+cmake --build build && ./build/zircon_tests
+./build/zircon render patches/03-fm-bell.json bell.wav --set Ratio=1.41
 
-cmake -S . -B build-plugin -DPRIMAL_BUILD_PLUGIN=ON  # + VST3/Standalone (fetches JUCE 8)
-cmake --build build-plugin --target PrimalModular_VST3
+cmake -S . -B build-plugin -DZIRCON_BUILD_PLUGIN=ON  # + VST3/Standalone (fetches JUCE 8)
+cmake --build build-plugin --target ZirconElemental_VST3
 ```
 
 Linux deps: `libasound2-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libfreetype-dev libfontconfig1-dev`.
@@ -59,7 +61,7 @@ Linux deps: `libasound2-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-
 * **Macros** are sub-patches with `inputs`, `outputs` and `$input` references. They live in `library/macros/*.json` or inline under `"macros"`, and nest freely.
 * `param` modules become host-automatable knobs (`name`, `min`, `max`, `default`, `curve: "exp"`).
 
-`./build/primal modules` lists every primitive and macro.
+`./build/zircon modules` lists every primitive and macro.
 
 ## Demo patches
 

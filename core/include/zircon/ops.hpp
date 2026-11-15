@@ -1,4 +1,4 @@
-// Primal Modular — operator catalogue.
+// Zircon Elemental — operator catalogue.
 // Every module type the compiler knows natively is described here: its
 // input ports (with default values used when nothing is wired), output
 // ports, and whether it breaks feedback loops (z1, delay).
@@ -7,7 +7,7 @@
 #include <vector>
 #include <unordered_map>
 
-namespace primal {
+namespace zircon {
 
 enum class Op {
     // math primitives
@@ -40,4 +40,4 @@ struct OpSpec {
 const std::vector<OpSpec>& opCatalogue();
 const OpSpec* findOp(const std::string& type);
 
-} // namespace primal
+} // namespace zircon

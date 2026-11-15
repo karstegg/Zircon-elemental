@@ -4,17 +4,17 @@
 
 // v0 "panel view": header (preset picker, load, status) + auto-generated
 // knob panel from the patch's params. The node-graph structure view is P2.
-class PrimalLook : public juce::LookAndFeel_V4 {
+class ZirconLook : public juce::LookAndFeel_V4 {
 public:
-    PrimalLook();
+    ZirconLook();
     void drawRotarySlider(juce::Graphics&, int x, int y, int w, int h, float pos, float start, float end,
                           juce::Slider&) override;
 };
 
-class PrimalEditor : public juce::AudioProcessorEditor, private juce::Timer {
+class ZirconEditor : public juce::AudioProcessorEditor, private juce::Timer {
 public:
-    explicit PrimalEditor(PrimalProcessor&);
-    ~PrimalEditor() override;
+    explicit ZirconEditor(ZirconProcessor&);
+    ~ZirconEditor() override;
     void paint(juce::Graphics&) override;
     void resized() override;
 
@@ -22,8 +22,8 @@ private:
     void timerCallback() override;
     void rebuildKnobs();
 
-    PrimalProcessor& proc_;
-    PrimalLook look_;
+    ZirconProcessor& proc_;
+    ZirconLook look_;
     juce::ComboBox presets_;
     juce::TextButton load_{"Load patch..."};
     juce::Label status_, error_;

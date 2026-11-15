@@ -1,16 +1,16 @@
 #pragma once
 #include <juce_audio_processors/juce_audio_processors.h>
-#include "primal/engine.hpp"
+#include "zircon/engine.hpp"
 #include <memory>
 
 // Host-facing wrapper. The patch's own params are mapped, in order, onto a
 // fixed bank of kHostParams automatable slots (VST3 needs a static list).
-class PrimalProcessor : public juce::AudioProcessor {
+class ZirconProcessor : public juce::AudioProcessor {
 public:
     static constexpr int kHostParams = 16;
 
-    PrimalProcessor();
-    ~PrimalProcessor() override = default;
+    ZirconProcessor();
+    ~ZirconProcessor() override = default;
 
     void prepareToPlay(double sampleRate, int) override;
     void releaseResources() override {}
@@ -19,7 +19,7 @@ public:
 
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override { return true; }
-    const juce::String getName() const override { return "Primal Modular"; }
+    const juce::String getName() const override { return "Zircon Elemental"; }
     bool acceptsMidi() const override { return true; }
     bool producesMidi() const override { return false; }
     double getTailLengthSeconds() const override { return 3.0; }
@@ -52,8 +52,8 @@ private:
     juce::Array<Factory> factory_;
     int currentProgram_ = 0;
 
-    primal::MacroLibrary lib_;
-    std::shared_ptr<primal::Engine> engine_;      // swapped under lock_
+    zircon::MacroLibrary lib_;
+    std::shared_ptr<zircon::Engine> engine_;      // swapped under lock_
     juce::SpinLock lock_;
     juce::String patchText_, lastError_;
     double sampleRate_ = 48000.0;

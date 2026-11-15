@@ -1,9 +1,9 @@
-#include "primal/engine.hpp"
+#include "zircon/engine.hpp"
 #include <algorithm>
 #include <cmath>
 #include <cstring>
 
-namespace primal {
+namespace zircon {
 
 static constexpr float kPi = 3.14159265358979f;
 
@@ -223,4 +223,4 @@ void Engine::process(float* left, float* right, int n) {
     }
 }
 
-} // namespace primal
+} // namespace zircon
