@@ -165,7 +165,14 @@ void ZirconEditor::timerCallback() {
 
 void ZirconEditor::showStructure() {
     if (structure_ == nullptr)
-        structure_ = std::make_unique<StructureWindow>([this] { if (structure_) structure_->setVisible(false); });
+    {
+        StructureHooks h;
+        h.onClose = [this] { if (structure_) structure_->setVisible(false); };
+        h.onEdit = [this](const juce::String& json) { return proc_.loadPatchText(json); };
+        h.macroNames = [this] { return proc_.macroNames(); };
+        h.macroText = [this](const juce::String& n) { return proc_.macroText(n); };
+        structure_ = std::make_unique<StructureWindow>(std::move(h));
+    }
     structure_->setPatch(proc_.patchName(), proc_.patchText());
     structure_->setVisible(true);
     structure_->toFront(true);

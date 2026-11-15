@@ -42,7 +42,7 @@ The VST3 lands in `build/plugin/ZirconElemental_artefacts/Release/VST3/`. Copy i
 - [x] P0 prototype: engine, macros, 8 patches, CLI, tests, VST3 (passes pluginval strictness 7)
 - [x] Test VST3/Standalone with Greg's Yamaha DGX670 on Windows (2026-11-15): sustain pedal (CC64) + `sustain` module, voice-retrigger fix, right-click structure view, optional ASIO (`-DZIRCON_ASIO_SDK=<path>`) all verified
 - [ ] P1 plugin: CLAP, sample-accurate automation, MIDI clock/transport, audio in/multi-out, MPE
-- [ ] P2 structure editor: GPU node graph, macros, live scopes, inline module docs
+- [~] P2 structure editor: MVP done (right-click > Show structure: drag-wire, add/delete modules, set constants, live recompile, save JSON; `plugin/StructureView.cpp`). Still to do: GPU node graph, macro open/edit, live scopes, inline module docs, undo
 - [ ] P3 panel view + preset browser, showcase synths (DX7-style FM, ladder)
 - [ ] P4 `.sm` importer + cleared patch archive as demos
 - [ ] P5 AI designer

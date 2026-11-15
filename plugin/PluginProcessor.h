@@ -38,6 +38,12 @@ public:
     juce::String loadPatchFile(const juce::File& f);
 
     juce::String patchName() const;
+    juce::StringArray macroNames() const {
+        juce::StringArray a; for (auto& n : lib_.names()) a.add(juce::String(n)); return a;
+    }
+    juce::String macroText(const juce::String& n) const {
+        return lib_.has(n.toStdString()) ? juce::String(lib_.get(n.toStdString())) : juce::String();
+    }
     juce::String patchText() const { return patchText_; }
     juce::String lastError() const { return lastError_; }
     int mappedParamCount() const;
