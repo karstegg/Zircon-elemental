@@ -76,6 +76,12 @@ Editor UI / AI agent ─▶ Patch JSON ─▶ Compiler ─▶ Program (flat regi
                                      topo-sort, z1 breaks loops
 ```
 
+## Platforms
+
+**Windows x64 is the official target.** CI builds, tests and packages the VST3 and Standalone on every push (see the Actions tab for downloads).
+
+macOS and Linux are **open for community ports**. The engine is plain C++20 with no platform code, and the JUCE wrapper builds on both (the v0 prototype was developed on Linux). Fork the repo, add a CI job, and open a PR.
+
 ## Licence
 
 AGPL-3.0, because JUCE 8's free tier requires it. If a permissive licence matters later, the core has no JUCE

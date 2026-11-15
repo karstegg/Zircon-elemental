@@ -7,35 +7,16 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    name: ${{ matrix.name }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: windows
-            os: windows-latest
-            extra: ""
-          - name: macos
-            os: macos-latest
-            extra: -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
-          - name: linux
-            os: ubuntu-24.04
-            extra: ""
+  # Official target: Windows x64. macOS/Linux build from the same CMake
+  # project; community ports welcome (see README "Platforms").
+  windows:
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Linux deps
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libasound2-dev libx11-dev libxrandr-dev libxinerama-dev \
-            libxcursor-dev libxext-dev libfreetype-dev libfontconfig1-dev libgl1-mesa-dev
-
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DZIRCON_BUILD_PLUGIN=ON ${{ matrix.extra }}
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DZIRCON_BUILD_PLUGIN=ON
 
       - name: Build core + tests
         run: cmake --build build --config Release --target zircon zircon_tests --parallel
@@ -64,11 +45,10 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ZirconElemental-${{ matrix.name }}
+          name: ZirconElemental-windows-x64
           path: dist
 
       - uses: actions/upload-artifact@v4
-        if: runner.os == 'Linux'
         with:
           name: demo-renders
           path: renders
