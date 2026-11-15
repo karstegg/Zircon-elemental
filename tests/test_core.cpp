@@ -34,6 +34,17 @@ static void test(const char* name, std::function<void()> f) {
 int main() {
     auto L = lib();
 
+    test("mod wheel brightens the FM bell", [&] {
+        auto energy = [&](float mw) {
+            Engine e(compilePatchFile(ZIRCON_SOURCE_DIR "/patches/03-fm-bell.json", L));
+            e.prepare(48000); e.setModWheel(mw); e.noteOn(60, 1.f);
+            auto x = render(e, 24000); double hf = 0;
+            for (size_t i = 1; i < x.size(); ++i) { double d = x[i] - x[i - 1]; hf += d * d; }
+            return hf;
+        };
+        CHECK(energy(1.f) > 1.5 * energy(0.f));
+    });
+
     test("sustain pedal lengthens karplus ring", [&] {
         auto tail = [&](bool pedal) {
             Engine e(compilePatchFile(ZIRCON_SOURCE_DIR "/patches/04-karplus-pluck.json", L));

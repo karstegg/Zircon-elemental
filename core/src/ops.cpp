@@ -34,6 +34,7 @@ const std::vector<OpSpec>& opCatalogue() {
         {Op::Gate, "gate", {}, {"out"}, false, "Voice gate 1/0", "context"},
         {Op::Velocity, "velocity", {}, {"out"}, false, "Voice velocity 0..1", "context"},
         {Op::Sustain, "sustain", {}, {"out"}, false, "Sustain pedal (CC64) 1 down / 0 up", "context"},
+        {Op::ModWheel, "modwheel", {}, {"out"}, false, "Mod wheel (CC1) 0..1", "context"},
         {Op::Param, "param", {}, {"out"}, false, "Host-automatable knob (params: name,min,max,default)", "context"},
         {Op::Noise, "noise", {}, {"out"}, false, "White noise -1..1", "source"},
         {Op::Mtof, "mtof", {{"in", 69.f}}, {"out"}, false, "MIDI note -> Hz", "math"},

@@ -115,6 +115,7 @@ void ZirconProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
         else if (m.isAllNotesOff() || m.isAllSoundOff()) eng.allNotesOff();
         else if (m.isSustainPedalOn()) eng.setSustain(true);
         else if (m.isSustainPedalOff()) eng.setSustain(false);
+        else if (m.isControllerOfType(1)) eng.setModWheel(m.getControllerValue() / 127.f);
         else if (m.isPitchWheel()) eng.setPitchBend((m.getPitchWheelValue() - 8192) / 8192.f * 2.f);
     }
     if (pos < n) eng.process(L + pos, R + pos, n - pos);

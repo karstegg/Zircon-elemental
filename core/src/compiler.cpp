@@ -343,10 +343,11 @@ Program compilePatch(const std::string& text, const MacroLibrary& lib) {
         case Op::Gate: if (prog.regGate < 0) prog.regGate = I.out[0]; else I.in[0] = prog.regGate; break;
         case Op::Velocity: if (prog.regVel < 0) prog.regVel = I.out[0]; else I.in[0] = prog.regVel; break;
         case Op::Sustain: if (prog.regSustain < 0) prog.regSustain = I.out[0]; else I.in[0] = prog.regSustain; break;
+        case Op::ModWheel: if (prog.regModWheel < 0) prog.regModWheel = I.out[0]; else I.in[0] = prog.regModWheel; break;
         default: break;
         }
         // context duplicates become copies of the canonical register
-        bool ctx = s->op == Op::SampleRate || s->op == Op::Pitch || s->op == Op::Gate || s->op == Op::Velocity || s->op == Op::Sustain;
+        bool ctx = s->op == Op::SampleRate || s->op == Op::Pitch || s->op == Op::Gate || s->op == Op::Velocity || s->op == Op::Sustain || s->op == Op::ModWheel;
         if (ctx) {
             if (I.in[0] >= 0) { I.op = Op::Add; I.in[1] = kReg(0.f); prog.code.push_back(I); }
             continue;
@@ -421,6 +422,7 @@ Program compilePatch(const std::string& text, const MacroLibrary& lib) {
     if (prog.regGate < 0) prog.regGate = newReg();
     if (prog.regVel < 0) prog.regVel = newReg();
     if (prog.regSustain < 0) prog.regSustain = newReg();
+    if (prog.regModWheel < 0) prog.regModWheel = newReg();
     return prog;
 }
 

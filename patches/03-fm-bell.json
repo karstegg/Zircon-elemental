@@ -1,6 +1,6 @@
 {
   "name": "2-Op FM Bell",
-  "doc": "DX-style 2-operator FM from primitives: modulator SineOsc -> carrier pm, index decays with its own envelope.",
+  "doc": "Mod wheel (CC1) opens up the FM index (brighter bell). DX-style 2-operator FM from primitives: modulator SineOsc -> carrier pm, index decays with its own envelope.",
   "voices": 8,
   "modules": [
     {"id": "f", "type": "NoteFreq"},
@@ -11,6 +11,7 @@
     {"id": "g", "type": "gate"},
     {"id": "menv", "type": "adsr", "in": {"a": 0.001, "d": 1.2, "s": 0.05, "r": 1.0}},
     {"id": "mi", "type": "mul"}, {"id": "mi2", "type": "mul"},
+    {"id": "mw", "type": "modwheel"}, {"id": "mwk", "type": "mul", "in": {"b": 3}}, {"id": "mwb", "type": "add", "in": {"b": 1}}, {"id": "mi3", "type": "mul"},
     {"id": "car", "type": "SineOsc"},
     {"id": "aenv", "type": "adsr", "in": {"a": 0.001, "d": 2.5, "s": 0.0, "r": 1.5}},
     {"id": "vca", "type": "mul"}, {"id": "lvl", "type": "mul", "in": {"b": 0.22}}
@@ -18,7 +19,7 @@
   "wires": [
     ["f", "mf.a"], ["ratio", "mf.b"], ["mf", "mod.freq"],
     ["g", "menv.gate"], ["mod", "mi.a"], ["menv", "mi.b"], ["mi", "mi2.a"], ["index", "mi2.b"],
-    ["f", "car.freq"], ["mi2", "car.pm"],
+    ["f", "car.freq"], ["mw", "mwk.a"], ["mwk", "mwb.a"], ["mi2", "mi3.a"], ["mwb", "mi3.b"], ["mi3", "car.pm"],
     ["g", "aenv.gate"], ["car", "vca.a"], ["aenv", "vca.b"], ["vca", "lvl.a"]
   ],
   "out": "lvl.out"

@@ -58,6 +58,15 @@ bool Engine::laneIdle(int l) const {
     return true;
 }
 
+void Engine::clearLane(int l) {
+    for (int s = 0; s < prog_.stateFloats; ++s) state_[(size_t)s * kMaxLanes + l] = 0.f;   // rng_ is left alone (xorshift must not be 0)
+    for (size_t d = 0; d < prog_.delays.size(); ++d) {
+        auto& b = delays_[d * kMaxLanes + l];
+        std::fill(b.buf.begin(), b.buf.end(), 0.f);
+        b.pos = 0;
+    }
+}
+
 void Engine::noteOn(int note, float vel) {
     if (vel <= 0.f) { noteOff(note); return; }
     int pick = -1;
@@ -70,6 +79,7 @@ void Engine::noteOn(int note, float vel) {
             if (score < best) { best = score; pick = l; }
         }
     }
+    if (!voices_[pick].active) clearLane(pick);   // fresh lane: no stale hidden state (it is skipped while idle)
     const bool wasGated = voices_[pick].gate;     // gate still high (held / pedal-sustained)
     voices_[pick] = Voice{note, true, true, ++clock_, vel};
     voices_[pick].retrig = wasGated;              // drop gate for one sample so envelopes re-attack
@@ -96,10 +106,13 @@ int Engine::activeVoices() const {
 #define LANES for (int v = 0; v < nv; ++v)
 
 void Engine::runSample() {
-    const int nv = lanes_;
+    // Only run lanes up to the highest active voice (free lanes are taken lowest-first).
+    int nv = 0;
+    for (int l = lanes_ - 1; l >= 0; --l) if (voices_[l].active) { nv = l + 1; break; }
     const float sr = (float)sr_;
     float* pitch = R(prog_.regPitch); float* gate = R(prog_.regGate); float* vel = R(prog_.regVel);
     LANES { pitch[v] = (float)voices_[v].note + bend_; gate[v] = (voices_[v].gate && !voices_[v].retrig) ? 1.f : 0.f; voices_[v].retrig = false; vel[v] = voices_[v].vel; }
+    std::fill_n(R(prog_.regModWheel), nv, mod_);
     std::fill_n(R(prog_.regSustain), nv, sustain_ ? 1.f : 0.f);
     for (size_t i = 0; i < paramValue_.size(); ++i) {
         paramValue_[i] += (paramTarget_[i] - paramValue_[i]) * paramCoef_;

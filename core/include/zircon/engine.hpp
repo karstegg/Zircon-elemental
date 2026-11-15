@@ -20,6 +20,7 @@ public:
     void noteOn(int note, float velocity);   // velocity 0..1
     void noteOff(int note);
     void allNotesOff();
+    void setModWheel(float v01) { mod_ = v01; }   // CC1, 0..1
     void setSustain(bool on);                // CC64 sustain pedal
     void setPitchBend(float semitones) { bend_ = semitones; }
 
@@ -39,6 +40,7 @@ private:
     struct Voice { int note = -1; bool gate = false; bool active = false; uint64_t age = 0; float vel = 0; bool sus = false; bool retrig = false; };
     void runSample();
     bool laneIdle(int lane) const;
+    void clearLane(int lane);   // zero a lane's state/delay lines when a voice starts on a free lane
 
     Program prog_;
     double sr_ = 48000.0;
@@ -54,6 +56,7 @@ private:
     uint64_t clock_ = 0;
     float bend_ = 0.f;
     bool sustain_ = false;
+    float mod_ = 0.f;
 };
 
 } // namespace zircon
