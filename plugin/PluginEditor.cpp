@@ -61,8 +61,10 @@ ZirconEditor::ZirconEditor(ZirconProcessor& p) : AudioProcessorEditor(p), proc_(
     error_.setColour(juce::Label::textColourId, col::err);
     addAndMakeVisible(error_);
 
+    addMouseListener(this, true);   // right-click anywhere (incl. over knobs) opens the context menu
     proc_.onPatchChanged = [this] {
         rebuildKnobs();
+        if (structure_ != nullptr && structure_->isVisible()) structure_->setPatch(proc_.patchName(), proc_.patchText());
         presets_.setSelectedId(proc_.getCurrentProgram() + 1, juce::dontSendNotification);
         error_.setText(proc_.lastError(), juce::dontSendNotification);
     };
@@ -74,6 +76,8 @@ ZirconEditor::ZirconEditor(ZirconProcessor& p) : AudioProcessorEditor(p), proc_(
 }
 
 ZirconEditor::~ZirconEditor() {
+    removeMouseListener(this);
+    structure_.reset();
     proc_.onPatchChanged = nullptr;
     setLookAndFeel(nullptr);
 }
@@ -157,4 +161,19 @@ void ZirconEditor::resized() {
 void ZirconEditor::timerCallback() {
     status_.setText(juce::String(proc_.activeVoices()) + " voices", juce::dontSendNotification);
     repaint();
+}
+
+void ZirconEditor::showStructure() {
+    if (structure_ == nullptr)
+        structure_ = std::make_unique<StructureWindow>([this] { if (structure_) structure_->setVisible(false); });
+    structure_->setPatch(proc_.patchName(), proc_.patchText());
+    structure_->setVisible(true);
+    structure_->toFront(true);
+}
+
+void ZirconEditor::mouseDown(const juce::MouseEvent& e) {
+    if (!e.mods.isPopupMenu()) return;
+    juce::PopupMenu m;
+    m.addItem(1, "Show structure / wiring...");
+    m.showMenuAsync(juce::PopupMenu::Options(), [this](int r) { if (r == 1) showStructure(); });
 }

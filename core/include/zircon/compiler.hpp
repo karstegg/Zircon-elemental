@@ -45,7 +45,7 @@ struct Program {
     std::vector<std::pair<int, float>> constRegs;   // register, value
     std::vector<ParamInfo> params;
     std::vector<DelayInfo> delays;
-    int regSampleRate = -1, regPitch = -1, regGate = -1, regVel = -1;
+    int regSampleRate = -1, regPitch = -1, regGate = -1, regVel = -1, regSustain = -1;
     std::vector<int> paramRegs;          // per param
     std::vector<int> adsrStates;         // state offsets of ADSRs (voice-free detection)
     int outL = -1, outR = -1;

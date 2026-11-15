@@ -34,7 +34,7 @@ void Engine::prepare(double sampleRate) {
     paramCoef_ = 1.f - std::exp(-1.f / (0.005f * (float)sr_));   // 5 ms smoothing
 }
 
-void Engine::reset() { prepare(sr_); for (auto& v : voices_) v = Voice{}; }
+void Engine::reset() { prepare(sr_); sustain_ = false; for (auto& v : voices_) v = Voice{}; }
 
 int Engine::findParam(const std::string& name) const {
     for (size_t i = 0; i < prog_.params.size(); ++i) if (prog_.params[i].name == name) return (int)i;
@@ -66,17 +66,26 @@ void Engine::noteOn(int note, float vel) {
     if (pick < 0) {   // steal: prefer released voices, then oldest
         uint64_t best = UINT64_MAX;
         for (int l = 0; l < lanes_; ++l) {
-            uint64_t score = voices_[l].age + (voices_[l].gate ? (1ull << 62) : 0);
+            uint64_t score = voices_[l].age + ((voices_[l].gate && !voices_[l].sus) ? (1ull << 62) : 0);
             if (score < best) { best = score; pick = l; }
         }
     }
+    const bool wasGated = voices_[pick].gate;     // gate still high (held / pedal-sustained)
     voices_[pick] = Voice{note, true, true, ++clock_, vel};
+    voices_[pick].retrig = wasGated;              // drop gate for one sample so envelopes re-attack
 }
 
 void Engine::noteOff(int note) {
-    for (int l = 0; l < lanes_; ++l) if (voices_[l].note == note && voices_[l].gate) voices_[l].gate = false;
+    for (int l = 0; l < lanes_; ++l) if (voices_[l].note == note && voices_[l].gate && !voices_[l].sus) {
+        if (sustain_) voices_[l].sus = true;   // pedal down: hold until release
+        else voices_[l].gate = false;
+    }
 }
-void Engine::allNotesOff() { for (auto& v : voices_) v.gate = false; }
+void Engine::setSustain(bool on) {
+    sustain_ = on;
+    if (!on) for (auto& v : voices_) if (v.sus) { v.gate = false; v.sus = false; }
+}
+void Engine::allNotesOff() { sustain_ = false; for (auto& v : voices_) { v.gate = false; v.sus = false; } }
 
 int Engine::activeVoices() const {
     int n = 0; for (auto& v : voices_) n += v.active; return n;
@@ -90,7 +99,8 @@ void Engine::runSample() {
     const int nv = lanes_;
     const float sr = (float)sr_;
     float* pitch = R(prog_.regPitch); float* gate = R(prog_.regGate); float* vel = R(prog_.regVel);
-    LANES { pitch[v] = (float)voices_[v].note + bend_; gate[v] = voices_[v].gate ? 1.f : 0.f; vel[v] = voices_[v].vel; }
+    LANES { pitch[v] = (float)voices_[v].note + bend_; gate[v] = (voices_[v].gate && !voices_[v].retrig) ? 1.f : 0.f; voices_[v].retrig = false; vel[v] = voices_[v].vel; }
+    std::fill_n(R(prog_.regSustain), nv, sustain_ ? 1.f : 0.f);
     for (size_t i = 0; i < paramValue_.size(); ++i) {
         paramValue_[i] += (paramTarget_[i] - paramValue_[i]) * paramCoef_;
         std::fill_n(R(prog_.paramRegs[i]), nv, paramValue_[i]);

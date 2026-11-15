@@ -34,6 +34,57 @@ static void test(const char* name, std::function<void()> f) {
 int main() {
     auto L = lib();
 
+    test("sustain pedal lengthens karplus ring", [&] {
+        auto tail = [&](bool pedal) {
+            Engine e(compilePatchFile(ZIRCON_SOURCE_DIR "/patches/04-karplus-pluck.json", L));
+            e.prepare(48000); e.setSustain(pedal); e.noteOn(57, 1.f); render(e, 2400); e.noteOff(57);
+            auto x = render(e, 48000 * 3); double r = 0;
+            for (size_t i = x.size() - 4800; i < x.size(); ++i) r += x[i] * x[i];
+            return r;
+        };
+        CHECK(tail(true) > 4.0 * tail(false));
+    });
+
+    test("re-pressing a pedal-held note re-excites the pluck", [&] {
+        Engine e(compilePatchFile(ZIRCON_SOURCE_DIR "/patches/04-karplus-pluck.json", L));
+        e.prepare(48000); e.setSustain(true);
+        e.noteOn(57, 1.f); render(e, 2400); e.noteOff(57);
+        render(e, 48000 * 2);
+        auto peak = [](const std::vector<float>& x) { float m = 0; for (float v : x) m = std::max(m, std::fabs(v)); return m; };
+        float before = peak(render(e, 2400));
+        e.noteOn(57, 1.f);
+        float after = peak(render(e, 2400));
+        CHECK(after > 2.f * before);
+        // pool full of pedal-held notes: stolen voice must also re-excite
+        for (int n = 40; n < 40 + 12; ++n) { e.noteOn(n, 1.f); render(e, 4800); e.noteOff(n); }
+        e.noteOn(80, 1.f);
+        CHECK(peak(render(e, 2400)) > 0.05f);
+    });
+
+    test("pedal down: newest chord notes always get voices (stealing)", [&] {
+        Engine e(compilePatchFile(ZIRCON_SOURCE_DIR "/patches/02-zdf-saw-bass.json", L));
+        e.prepare(48000); e.setSustain(true);
+        int chords[4][4] = {{48, 52, 55, 60}, {50, 53, 57, 62}, {52, 55, 59, 64}, {53, 57, 60, 65}};
+        for (auto& c : chords) {
+            for (int n : c) { e.noteOn(n, 0.8f); render(e, 64); }
+            for (int n : c) e.noteOff(n);
+            render(e, 4800);
+        }
+        CHECK(e.activeVoices() == e.program().voices);   // pool full of held notes, newest still fit
+    });
+
+    test("sustain pedal holds released notes until pedal up", [&] {
+        Engine e(compilePatchFile(ZIRCON_SOURCE_DIR "/patches/02-zdf-saw-bass.json", L));
+        e.prepare(48000); e.setSustain(true); e.noteOn(48, 1.f);
+        render(e, 4800); e.noteOff(48);
+        auto held = render(e, 48000 * 2);                 // pedal still down -> must keep sounding
+        double rms = 0; for (size_t i = held.size() - 4800; i < held.size(); ++i) rms += held[i] * held[i];
+        CHECK(rms / 4800 > 1e-6);
+        e.setSustain(false);                              // pedal up -> release, voice frees
+        render(e, 48000 * 6);
+        CHECK(e.activeVoices() == 0);
+    });
+
     test("primitive sine oscillates at 440 Hz for note 69", [&] {
         Engine e(compilePatchFile(ZIRCON_SOURCE_DIR "/patches/01-primitive-sine.json", L));
         e.prepare(48000); e.noteOn(69, 1.f);

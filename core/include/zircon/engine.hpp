@@ -20,6 +20,7 @@ public:
     void noteOn(int note, float velocity);   // velocity 0..1
     void noteOff(int note);
     void allNotesOff();
+    void setSustain(bool on);                // CC64 sustain pedal
     void setPitchBend(float semitones) { bend_ = semitones; }
 
     int numParams() const { return (int)prog_.params.size(); }
@@ -35,7 +36,7 @@ public:
     const Program& program() const { return prog_; }
 
 private:
-    struct Voice { int note = -1; bool gate = false; bool active = false; uint64_t age = 0; float vel = 0; };
+    struct Voice { int note = -1; bool gate = false; bool active = false; uint64_t age = 0; float vel = 0; bool sus = false; bool retrig = false; };
     void runSample();
     bool laneIdle(int lane) const;
 
@@ -52,6 +53,7 @@ private:
     std::vector<Voice> voices_;
     uint64_t clock_ = 0;
     float bend_ = 0.f;
+    bool sustain_ = false;
 };
 
 } // namespace zircon

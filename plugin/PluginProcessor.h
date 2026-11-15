@@ -38,6 +38,7 @@ public:
     juce::String loadPatchFile(const juce::File& f);
 
     juce::String patchName() const;
+    juce::String patchText() const { return patchText_; }
     juce::String lastError() const { return lastError_; }
     int mappedParamCount() const;
     juce::String mappedParamName(int slot) const;

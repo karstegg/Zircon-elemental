@@ -16,7 +16,7 @@ enum class Op {
     // state primitives (feedback breakers)
     Z1, Delay,
     // context sources
-    SampleRate, Pitch, Gate, Velocity, Param, Noise,
+    SampleRate, Pitch, Gate, Velocity, Sustain, Param, Noise,
     // conversions
     Mtof,
     // native premade modules
