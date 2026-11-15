@@ -120,6 +120,28 @@ int main() {
         CHECK(std::abs(best - 218) <= 3);
     });
 
+    test("zircon lattice: Raman partials at 220*nu/202 Hz, metamict downshifts", [&] {
+        auto energyAt = [](const std::vector<float>& x, double f) {   // Goertzel
+            double w = 2 * 3.14159265358979 * f / 48000, c = 2 * std::cos(w), s1 = 0, s2 = 0;
+            for (float v : x) { double s0 = v + c * s1 - s2; s2 = s1; s1 = s0; }
+            return s1 * s1 + s2 * s2 - c * s1 * s2;
+        };
+        auto renderNote = [&](float metamict) {
+            Engine e(compilePatchFile(ZIRCON_SOURCE_DIR "/patches/06-zircon-gem.json", L));
+            e.prepare(48000); e.setParam(e.findParam("Metamict"), metamict);
+            e.setParam(e.findParam("Activity"), 1.f);
+            render(e, 4800); e.noteOn(57, 1.f);
+            return render(e, 48000);
+        };
+        auto x0 = renderNote(0.f), x1 = renderNote(1.f);
+        // nu3 (1008 cm^-1) -> 1139 Hz incl. dispersion; nu_rot (356) -> 391 Hz
+        CHECK(energyAt(x0, 1139) > 50 * energyAt(x0, 800));
+        CHECK(energyAt(x0, 391) > 50 * energyAt(x0, 600));
+        // damage shifts the 202 mode from 220 Hz down toward 212 Hz
+        CHECK(energyAt(x1, 212) > energyAt(x1, 220));
+        CHECK(energyAt(x0, 220) > energyAt(x0, 212));
+    });
+
     test("unknown module and bad port give errors", [&] {
         int errs = 0;
         try { compilePatch(R"({"modules":[{"id":"x","type":"nope"}],"out":"x.out"})", L); } catch (const CompileError&) { ++errs; }

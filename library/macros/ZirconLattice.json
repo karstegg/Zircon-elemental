@@ -1,0 +1,1745 @@
+{
+ "name": "ZirconLattice",
+ "doc": "Resonant zircon crystal: 8 Raman phonon modes x (ordinary + extraordinary ray). f0 = pitch of the 202 cm^-1 mode; metamict 0..1; biref 0..0.06; fire 0..3; temp Kelvin; polar = polarizer angle in degrees. Outputs L (o-ray-weighted), R.",
+ "inputs": [
+  {
+   "name": "exc"
+  },
+  {
+   "name": "f0",
+   "default": 220
+  },
+  {
+   "name": "metamict",
+   "default": 0
+  },
+  {
+   "name": "biref",
+   "default": 0.042
+  },
+  {
+   "name": "fire",
+   "default": 1
+  },
+  {
+   "name": "temp",
+   "default": 300
+  },
+  {
+   "name": "polar",
+   "default": 20
+  }
+ ],
+ "outputs": {
+  "L": "L.out",
+  "R": "R.out"
+ },
+ "modules": [
+  {
+   "id": "hzpc",
+   "type": "div",
+   "in": {
+    "b": 202.0
+   }
+  },
+  {
+   "id": "tk",
+   "type": "mul",
+   "in": {
+    "b": 0.002833333333333333
+   }
+  },
+  {
+   "id": "tm",
+   "type": "add",
+   "in": {
+    "b": 0.15
+   }
+  },
+  {
+   "id": "wscale",
+   "type": "mul"
+  },
+  {
+   "id": "ne",
+   "type": "add",
+   "in": {
+    "b": 1.93
+   }
+  },
+  {
+   "id": "eratio",
+   "type": "div",
+   "in": {
+    "a": 1.93
+   }
+  },
+  {
+   "id": "disp",
+   "type": "mul",
+   "in": {
+    "b": 0.0095
+   }
+  },
+  {
+   "id": "rad",
+   "type": "mul",
+   "in": {
+    "b": 0.017453292519943295
+   }
+  },
+  {
+   "id": "cth",
+   "type": "cos"
+  },
+  {
+   "id": "c2",
+   "type": "mul"
+  },
+  {
+   "id": "s2",
+   "type": "sub",
+   "in": {
+    "a": 1
+   }
+  },
+  {
+   "id": "sumO",
+   "type": "add"
+  },
+  {
+   "id": "sumE",
+   "type": "add"
+  },
+  {
+   "id": "m0_sh",
+   "type": "mul",
+   "in": {
+    "b": -3.0
+   }
+  },
+  {
+   "id": "m0_nu",
+   "type": "add",
+   "in": {
+    "b": 202.0
+   }
+  },
+  {
+   "id": "m0_rt",
+   "type": "div",
+   "in": {
+    "b": 202.0
+   }
+  },
+  {
+   "id": "m0_rm1",
+   "type": "sub",
+   "in": {
+    "b": 1
+   }
+  },
+  {
+   "id": "m0_dd",
+   "type": "mul"
+  },
+  {
+   "id": "m0_dd1",
+   "type": "add",
+   "in": {
+    "b": 1
+   }
+  },
+  {
+   "id": "m0_fo",
+   "type": "mul"
+  },
+  {
+   "id": "m0_fs",
+   "type": "mul"
+  },
+  {
+   "id": "m0_fe",
+   "type": "mul"
+  },
+  {
+   "id": "m0_gm",
+   "type": "mul",
+   "in": {
+    "b": 11.0
+   }
+  },
+  {
+   "id": "m0_g",
+   "type": "add",
+   "in": {
+    "b": 3.0
+   }
+  },
+  {
+   "id": "m0_bw",
+   "type": "mul"
+  },
+  {
+   "id": "m0_ex",
+   "type": "mul",
+   "in": {
+    "b": 0.3
+   }
+  },
+  {
+   "id": "m0_o",
+   "type": "RamanMode"
+  },
+  {
+   "id": "m0_e",
+   "type": "RamanMode"
+  },
+  {
+   "id": "m1_sh",
+   "type": "mul",
+   "in": {
+    "b": -3.0
+   }
+  },
+  {
+   "id": "m1_nu",
+   "type": "add",
+   "in": {
+    "b": 214.0
+   }
+  },
+  {
+   "id": "m1_rt",
+   "type": "div",
+   "in": {
+    "b": 202.0
+   }
+  },
+  {
+   "id": "m1_rm1",
+   "type": "sub",
+   "in": {
+    "b": 1
+   }
+  },
+  {
+   "id": "m1_dd",
+   "type": "mul"
+  },
+  {
+   "id": "m1_dd1",
+   "type": "add",
+   "in": {
+    "b": 1
+   }
+  },
+  {
+   "id": "m1_fo",
+   "type": "mul"
+  },
+  {
+   "id": "m1_fs",
+   "type": "mul"
+  },
+  {
+   "id": "m1_fe",
+   "type": "mul"
+  },
+  {
+   "id": "m1_gm",
+   "type": "mul",
+   "in": {
+    "b": 11.0
+   }
+  },
+  {
+   "id": "m1_g",
+   "type": "add",
+   "in": {
+    "b": 3.0
+   }
+  },
+  {
+   "id": "m1_bw",
+   "type": "mul"
+  },
+  {
+   "id": "m1_ex",
+   "type": "mul",
+   "in": {
+    "b": 0.22
+   }
+  },
+  {
+   "id": "m1_o",
+   "type": "RamanMode"
+  },
+  {
+   "id": "m1_e",
+   "type": "RamanMode"
+  },
+  {
+   "id": "m2_sh",
+   "type": "mul",
+   "in": {
+    "b": -3.0
+   }
+  },
+  {
+   "id": "m2_nu",
+   "type": "add",
+   "in": {
+    "b": 225.0
+   }
+  },
+  {
+   "id": "m2_rt",
+   "type": "div",
+   "in": {
+    "b": 202.0
+   }
+  },
+  {
+   "id": "m2_rm1",
+   "type": "sub",
+   "in": {
+    "b": 1
+   }
+  },
+  {
+   "id": "m2_dd",
+   "type": "mul"
+  },
+  {
+   "id": "m2_dd1",
+   "type": "add",
+   "in": {
+    "b": 1
+   }
+  },
+  {
+   "id": "m2_fo",
+   "type": "mul"
+  },
+  {
+   "id": "m2_fs",
+   "type": "mul"
+  },
+  {
+   "id": "m2_fe",
+   "type": "mul"
+  },
+  {
+   "id": "m2_gm",
+   "type": "mul",
+   "in": {
+    "b": 12.5
+   }
+  },
+  {
+   "id": "m2_g",
+   "type": "add",
+   "in": {
+    "b": 3.5
+   }
+  },
+  {
+   "id": "m2_bw",
+   "type": "mul"
+  },
+  {
+   "id": "m2_ex",
+   "type": "mul",
+   "in": {
+    "b": 0.3
+   }
+  },
+  {
+   "id": "m2_o",
+   "type": "RamanMode"
+  },
+  {
+   "id": "m2_e",
+   "type": "RamanMode"
+  },
+  {
+   "id": "m3_sh",
+   "type": "mul",
+   "in": {
+    "b": -6.0
+   }
+  },
+  {
+   "id": "m3_nu",
+   "type": "add",
+   "in": {
+    "b": 356.0
+   }
+  },
+  {
+   "id": "m3_rt",
+   "type": "div",
+   "in": {
+    "b": 202.0
+   }
+  },
+  {
+   "id": "m3_rm1",
+   "type": "sub",
+   "in": {
+    "b": 1
+   }
+  },
+  {
+   "id": "m3_dd",
+   "type": "mul"
+  },
+  {
+   "id": "m3_dd1",
+   "type": "add",
+   "in": {
+    "b": 1
+   }
+  },
+  {
+   "id": "m3_fo",
+   "type": "mul"
+  },
+  {
+   "id": "m3_fs",
+   "type": "mul"
+  },
+  {
+   "id": "m3_fe",
+   "type": "mul"
+  },
+  {
+   "id": "m3_gm",
+   "type": "mul",
+   "in": {
+    "b": 18.5
+   }
+  },
+  {
+   "id": "m3_g",
+   "type": "add",
+   "in": {
+    "b": 3.5
+   }
+  },
+  {
+   "id": "m3_bw",
+   "type": "mul"
+  },
+  {
+   "id": "m3_ex",
+   "type": "mul",
+   "in": {
+    "b": 0.75
+   }
+  },
+  {
+   "id": "m3_o",
+   "type": "RamanMode"
+  },
+  {
+   "id": "m3_e",
+   "type": "RamanMode"
+  },
+  {
+   "id": "m4_sh",
+   "type": "mul",
+   "in": {
+    "b": -6.0
+   }
+  },
+  {
+   "id": "m4_nu",
+   "type": "add",
+   "in": {
+    "b": 439.0
+   }
+  },
+  {
+   "id": "m4_rt",
+   "type": "div",
+   "in": {
+    "b": 202.0
+   }
+  },
+  {
+   "id": "m4_rm1",
+   "type": "sub",
+   "in": {
+    "b": 1
+   }
+  },
+  {
+   "id": "m4_dd",
+   "type": "mul"
+  },
+  {
+   "id": "m4_dd1",
+   "type": "add",
+   "in": {
+    "b": 1
+   }
+  },
+  {
+   "id": "m4_fo",
+   "type": "mul"
+  },
+  {
+   "id": "m4_fs",
+   "type": "mul"
+  },
+  {
+   "id": "m4_fe",
+   "type": "mul"
+  },
+  {
+   "id": "m4_gm",
+   "type": "mul",
+   "in": {
+    "b": 17.0
+   }
+  },
+  {
+   "id": "m4_g",
+   "type": "add",
+   "in": {
+    "b": 3.0
+   }
+  },
+  {
+   "id": "m4_bw",
+   "type": "mul"
+  },
+  {
+   "id": "m4_ex",
+   "type": "mul",
+   "in": {
+    "b": 0.55
+   }
+  },
+  {
+   "id": "m4_o",
+   "type": "RamanMode"
+  },
+  {
+   "id": "m4_e",
+   "type": "RamanMode"
+  },
+  {
+   "id": "m5_sh",
+   "type": "mul",
+   "in": {
+    "b": -9.0
+   }
+  },
+  {
+   "id": "m5_nu",
+   "type": "add",
+   "in": {
+    "b": 974.0
+   }
+  },
+  {
+   "id": "m5_rt",
+   "type": "div",
+   "in": {
+    "b": 202.0
+   }
+  },
+  {
+   "id": "m5_rm1",
+   "type": "sub",
+   "in": {
+    "b": 1
+   }
+  },
+  {
+   "id": "m5_dd",
+   "type": "mul"
+  },
+  {
+   "id": "m5_dd1",
+   "type": "add",
+   "in": {
+    "b": 1
+   }
+  },
+  {
+   "id": "m5_fo",
+   "type": "mul"
+  },
+  {
+   "id": "m5_fs",
+   "type": "mul"
+  },
+  {
+   "id": "m5_fe",
+   "type": "mul"
+  },
+  {
+   "id": "m5_gm",
+   "type": "mul",
+   "in": {
+    "b": 23.5
+   }
+  },
+  {
+   "id": "m5_g",
+   "type": "add",
+   "in": {
+    "b": 2.5
+   }
+  },
+  {
+   "id": "m5_bw",
+   "type": "mul"
+  },
+  {
+   "id": "m5_ex",
+   "type": "mul",
+   "in": {
+    "b": 0.35
+   }
+  },
+  {
+   "id": "m5_o",
+   "type": "RamanMode"
+  },
+  {
+   "id": "m5_e",
+   "type": "RamanMode"
+  },
+  {
+   "id": "m6_sh",
+   "type": "mul",
+   "in": {
+    "b": -10.0
+   }
+  },
+  {
+   "id": "m6_nu",
+   "type": "add",
+   "in": {
+    "b": 1008.0
+   }
+  },
+  {
+   "id": "m6_rt",
+   "type": "div",
+   "in": {
+    "b": 202.0
+   }
+  },
+  {
+   "id": "m6_rm1",
+   "type": "sub",
+   "in": {
+    "b": 1
+   }
+  },
+  {
+   "id": "m6_dd",
+   "type": "mul"
+  },
+  {
+   "id": "m6_dd1",
+   "type": "add",
+   "in": {
+    "b": 1
+   }
+  },
+  {
+   "id": "m6_fo",
+   "type": "mul"
+  },
+  {
+   "id": "m6_fs",
+   "type": "mul"
+  },
+  {
+   "id": "m6_fe",
+   "type": "mul"
+  },
+  {
+   "id": "m6_gm",
+   "type": "mul",
+   "in": {
+    "b": 27.5
+   }
+  },
+  {
+   "id": "m6_g",
+   "type": "add",
+   "in": {
+    "b": 2.5
+   }
+  },
+  {
+   "id": "m6_bw",
+   "type": "mul"
+  },
+  {
+   "id": "m6_ex",
+   "type": "mul",
+   "in": {
+    "b": 1.0
+   }
+  },
+  {
+   "id": "m6_o",
+   "type": "RamanMode"
+  },
+  {
+   "id": "m6_e",
+   "type": "RamanMode"
+  },
+  {
+   "id": "m7_sh",
+   "type": "mul",
+   "in": {
+    "b": -10.0
+   }
+  },
+  {
+   "id": "m7_nu",
+   "type": "add",
+   "in": {
+    "b": 1055.0
+   }
+  },
+  {
+   "id": "m7_rt",
+   "type": "div",
+   "in": {
+    "b": 202.0
+   }
+  },
+  {
+   "id": "m7_rm1",
+   "type": "sub",
+   "in": {
+    "b": 1
+   }
+  },
+  {
+   "id": "m7_dd",
+   "type": "mul"
+  },
+  {
+   "id": "m7_dd1",
+   "type": "add",
+   "in": {
+    "b": 1
+   }
+  },
+  {
+   "id": "m7_fo",
+   "type": "mul"
+  },
+  {
+   "id": "m7_fs",
+   "type": "mul"
+  },
+  {
+   "id": "m7_fe",
+   "type": "mul"
+  },
+  {
+   "id": "m7_gm",
+   "type": "mul",
+   "in": {
+    "b": 26.0
+   }
+  },
+  {
+   "id": "m7_g",
+   "type": "add",
+   "in": {
+    "b": 4.0
+   }
+  },
+  {
+   "id": "m7_bw",
+   "type": "mul"
+  },
+  {
+   "id": "m7_ex",
+   "type": "mul",
+   "in": {
+    "b": 0.08
+   }
+  },
+  {
+   "id": "m7_o",
+   "type": "RamanMode"
+  },
+  {
+   "id": "m7_e",
+   "type": "RamanMode"
+  },
+  {
+   "id": "Lo",
+   "type": "mul"
+  },
+  {
+   "id": "Le",
+   "type": "mul"
+  },
+  {
+   "id": "L",
+   "type": "add"
+  },
+  {
+   "id": "Ro",
+   "type": "mul"
+  },
+  {
+   "id": "Re",
+   "type": "mul"
+  },
+  {
+   "id": "R",
+   "type": "add"
+  }
+ ],
+ "wires": [
+  [
+   "$f0",
+   "hzpc.a"
+  ],
+  [
+   "$temp",
+   "tk.a"
+  ],
+  [
+   "tk",
+   "tm.a"
+  ],
+  [
+   "hzpc",
+   "wscale.a"
+  ],
+  [
+   "tm",
+   "wscale.b"
+  ],
+  [
+   "$biref",
+   "ne.a"
+  ],
+  [
+   "ne",
+   "eratio.b"
+  ],
+  [
+   "$fire",
+   "disp.a"
+  ],
+  [
+   "$polar",
+   "rad.a"
+  ],
+  [
+   "rad",
+   "cth.in"
+  ],
+  [
+   "cth",
+   "c2.a"
+  ],
+  [
+   "cth",
+   "c2.b"
+  ],
+  [
+   "c2",
+   "s2.b"
+  ],
+  [
+   "$metamict",
+   "m0_sh.a"
+  ],
+  [
+   "m0_sh",
+   "m0_nu.a"
+  ],
+  [
+   "m0_nu",
+   "m0_rt.a"
+  ],
+  [
+   "m0_rt",
+   "m0_rm1.a"
+  ],
+  [
+   "m0_rm1",
+   "m0_dd.a"
+  ],
+  [
+   "disp",
+   "m0_dd.b"
+  ],
+  [
+   "m0_dd",
+   "m0_dd1.a"
+  ],
+  [
+   "m0_nu",
+   "m0_fo.a"
+  ],
+  [
+   "hzpc",
+   "m0_fo.b"
+  ],
+  [
+   "m0_fo",
+   "m0_fs.a"
+  ],
+  [
+   "m0_dd1",
+   "m0_fs.b"
+  ],
+  [
+   "m0_fs",
+   "m0_fe.a"
+  ],
+  [
+   "eratio",
+   "m0_fe.b"
+  ],
+  [
+   "$metamict",
+   "m0_gm.a"
+  ],
+  [
+   "m0_gm",
+   "m0_g.a"
+  ],
+  [
+   "m0_g",
+   "m0_bw.a"
+  ],
+  [
+   "wscale",
+   "m0_bw.b"
+  ],
+  [
+   "$exc",
+   "m0_ex.a"
+  ],
+  [
+   "m0_ex",
+   "m0_o.in"
+  ],
+  [
+   "m0_fs",
+   "m0_o.freq"
+  ],
+  [
+   "m0_bw",
+   "m0_o.width"
+  ],
+  [
+   "m0_o",
+   "sumO.a"
+  ],
+  [
+   "m0_ex",
+   "m0_e.in"
+  ],
+  [
+   "m0_fe",
+   "m0_e.freq"
+  ],
+  [
+   "m0_bw",
+   "m0_e.width"
+  ],
+  [
+   "m0_e",
+   "sumE.a"
+  ],
+  [
+   "$metamict",
+   "m1_sh.a"
+  ],
+  [
+   "m1_sh",
+   "m1_nu.a"
+  ],
+  [
+   "m1_nu",
+   "m1_rt.a"
+  ],
+  [
+   "m1_rt",
+   "m1_rm1.a"
+  ],
+  [
+   "m1_rm1",
+   "m1_dd.a"
+  ],
+  [
+   "disp",
+   "m1_dd.b"
+  ],
+  [
+   "m1_dd",
+   "m1_dd1.a"
+  ],
+  [
+   "m1_nu",
+   "m1_fo.a"
+  ],
+  [
+   "hzpc",
+   "m1_fo.b"
+  ],
+  [
+   "m1_fo",
+   "m1_fs.a"
+  ],
+  [
+   "m1_dd1",
+   "m1_fs.b"
+  ],
+  [
+   "m1_fs",
+   "m1_fe.a"
+  ],
+  [
+   "eratio",
+   "m1_fe.b"
+  ],
+  [
+   "$metamict",
+   "m1_gm.a"
+  ],
+  [
+   "m1_gm",
+   "m1_g.a"
+  ],
+  [
+   "m1_g",
+   "m1_bw.a"
+  ],
+  [
+   "wscale",
+   "m1_bw.b"
+  ],
+  [
+   "$exc",
+   "m1_ex.a"
+  ],
+  [
+   "m1_ex",
+   "m1_o.in"
+  ],
+  [
+   "m1_fs",
+   "m1_o.freq"
+  ],
+  [
+   "m1_bw",
+   "m1_o.width"
+  ],
+  [
+   "m1_o",
+   "sumO.a"
+  ],
+  [
+   "m1_ex",
+   "m1_e.in"
+  ],
+  [
+   "m1_fe",
+   "m1_e.freq"
+  ],
+  [
+   "m1_bw",
+   "m1_e.width"
+  ],
+  [
+   "m1_e",
+   "sumE.a"
+  ],
+  [
+   "$metamict",
+   "m2_sh.a"
+  ],
+  [
+   "m2_sh",
+   "m2_nu.a"
+  ],
+  [
+   "m2_nu",
+   "m2_rt.a"
+  ],
+  [
+   "m2_rt",
+   "m2_rm1.a"
+  ],
+  [
+   "m2_rm1",
+   "m2_dd.a"
+  ],
+  [
+   "disp",
+   "m2_dd.b"
+  ],
+  [
+   "m2_dd",
+   "m2_dd1.a"
+  ],
+  [
+   "m2_nu",
+   "m2_fo.a"
+  ],
+  [
+   "hzpc",
+   "m2_fo.b"
+  ],
+  [
+   "m2_fo",
+   "m2_fs.a"
+  ],
+  [
+   "m2_dd1",
+   "m2_fs.b"
+  ],
+  [
+   "m2_fs",
+   "m2_fe.a"
+  ],
+  [
+   "eratio",
+   "m2_fe.b"
+  ],
+  [
+   "$metamict",
+   "m2_gm.a"
+  ],
+  [
+   "m2_gm",
+   "m2_g.a"
+  ],
+  [
+   "m2_g",
+   "m2_bw.a"
+  ],
+  [
+   "wscale",
+   "m2_bw.b"
+  ],
+  [
+   "$exc",
+   "m2_ex.a"
+  ],
+  [
+   "m2_ex",
+   "m2_o.in"
+  ],
+  [
+   "m2_fs",
+   "m2_o.freq"
+  ],
+  [
+   "m2_bw",
+   "m2_o.width"
+  ],
+  [
+   "m2_o",
+   "sumO.a"
+  ],
+  [
+   "m2_ex",
+   "m2_e.in"
+  ],
+  [
+   "m2_fe",
+   "m2_e.freq"
+  ],
+  [
+   "m2_bw",
+   "m2_e.width"
+  ],
+  [
+   "m2_e",
+   "sumE.a"
+  ],
+  [
+   "$metamict",
+   "m3_sh.a"
+  ],
+  [
+   "m3_sh",
+   "m3_nu.a"
+  ],
+  [
+   "m3_nu",
+   "m3_rt.a"
+  ],
+  [
+   "m3_rt",
+   "m3_rm1.a"
+  ],
+  [
+   "m3_rm1",
+   "m3_dd.a"
+  ],
+  [
+   "disp",
+   "m3_dd.b"
+  ],
+  [
+   "m3_dd",
+   "m3_dd1.a"
+  ],
+  [
+   "m3_nu",
+   "m3_fo.a"
+  ],
+  [
+   "hzpc",
+   "m3_fo.b"
+  ],
+  [
+   "m3_fo",
+   "m3_fs.a"
+  ],
+  [
+   "m3_dd1",
+   "m3_fs.b"
+  ],
+  [
+   "m3_fs",
+   "m3_fe.a"
+  ],
+  [
+   "eratio",
+   "m3_fe.b"
+  ],
+  [
+   "$metamict",
+   "m3_gm.a"
+  ],
+  [
+   "m3_gm",
+   "m3_g.a"
+  ],
+  [
+   "m3_g",
+   "m3_bw.a"
+  ],
+  [
+   "wscale",
+   "m3_bw.b"
+  ],
+  [
+   "$exc",
+   "m3_ex.a"
+  ],
+  [
+   "m3_ex",
+   "m3_o.in"
+  ],
+  [
+   "m3_fs",
+   "m3_o.freq"
+  ],
+  [
+   "m3_bw",
+   "m3_o.width"
+  ],
+  [
+   "m3_o",
+   "sumO.a"
+  ],
+  [
+   "m3_ex",
+   "m3_e.in"
+  ],
+  [
+   "m3_fe",
+   "m3_e.freq"
+  ],
+  [
+   "m3_bw",
+   "m3_e.width"
+  ],
+  [
+   "m3_e",
+   "sumE.a"
+  ],
+  [
+   "$metamict",
+   "m4_sh.a"
+  ],
+  [
+   "m4_sh",
+   "m4_nu.a"
+  ],
+  [
+   "m4_nu",
+   "m4_rt.a"
+  ],
+  [
+   "m4_rt",
+   "m4_rm1.a"
+  ],
+  [
+   "m4_rm1",
+   "m4_dd.a"
+  ],
+  [
+   "disp",
+   "m4_dd.b"
+  ],
+  [
+   "m4_dd",
+   "m4_dd1.a"
+  ],
+  [
+   "m4_nu",
+   "m4_fo.a"
+  ],
+  [
+   "hzpc",
+   "m4_fo.b"
+  ],
+  [
+   "m4_fo",
+   "m4_fs.a"
+  ],
+  [
+   "m4_dd1",
+   "m4_fs.b"
+  ],
+  [
+   "m4_fs",
+   "m4_fe.a"
+  ],
+  [
+   "eratio",
+   "m4_fe.b"
+  ],
+  [
+   "$metamict",
+   "m4_gm.a"
+  ],
+  [
+   "m4_gm",
+   "m4_g.a"
+  ],
+  [
+   "m4_g",
+   "m4_bw.a"
+  ],
+  [
+   "wscale",
+   "m4_bw.b"
+  ],
+  [
+   "$exc",
+   "m4_ex.a"
+  ],
+  [
+   "m4_ex",
+   "m4_o.in"
+  ],
+  [
+   "m4_fs",
+   "m4_o.freq"
+  ],
+  [
+   "m4_bw",
+   "m4_o.width"
+  ],
+  [
+   "m4_o",
+   "sumO.a"
+  ],
+  [
+   "m4_ex",
+   "m4_e.in"
+  ],
+  [
+   "m4_fe",
+   "m4_e.freq"
+  ],
+  [
+   "m4_bw",
+   "m4_e.width"
+  ],
+  [
+   "m4_e",
+   "sumE.a"
+  ],
+  [
+   "$metamict",
+   "m5_sh.a"
+  ],
+  [
+   "m5_sh",
+   "m5_nu.a"
+  ],
+  [
+   "m5_nu",
+   "m5_rt.a"
+  ],
+  [
+   "m5_rt",
+   "m5_rm1.a"
+  ],
+  [
+   "m5_rm1",
+   "m5_dd.a"
+  ],
+  [
+   "disp",
+   "m5_dd.b"
+  ],
+  [
+   "m5_dd",
+   "m5_dd1.a"
+  ],
+  [
+   "m5_nu",
+   "m5_fo.a"
+  ],
+  [
+   "hzpc",
+   "m5_fo.b"
+  ],
+  [
+   "m5_fo",
+   "m5_fs.a"
+  ],
+  [
+   "m5_dd1",
+   "m5_fs.b"
+  ],
+  [
+   "m5_fs",
+   "m5_fe.a"
+  ],
+  [
+   "eratio",
+   "m5_fe.b"
+  ],
+  [
+   "$metamict",
+   "m5_gm.a"
+  ],
+  [
+   "m5_gm",
+   "m5_g.a"
+  ],
+  [
+   "m5_g",
+   "m5_bw.a"
+  ],
+  [
+   "wscale",
+   "m5_bw.b"
+  ],
+  [
+   "$exc",
+   "m5_ex.a"
+  ],
+  [
+   "m5_ex",
+   "m5_o.in"
+  ],
+  [
+   "m5_fs",
+   "m5_o.freq"
+  ],
+  [
+   "m5_bw",
+   "m5_o.width"
+  ],
+  [
+   "m5_o",
+   "sumO.a"
+  ],
+  [
+   "m5_ex",
+   "m5_e.in"
+  ],
+  [
+   "m5_fe",
+   "m5_e.freq"
+  ],
+  [
+   "m5_bw",
+   "m5_e.width"
+  ],
+  [
+   "m5_e",
+   "sumE.a"
+  ],
+  [
+   "$metamict",
+   "m6_sh.a"
+  ],
+  [
+   "m6_sh",
+   "m6_nu.a"
+  ],
+  [
+   "m6_nu",
+   "m6_rt.a"
+  ],
+  [
+   "m6_rt",
+   "m6_rm1.a"
+  ],
+  [
+   "m6_rm1",
+   "m6_dd.a"
+  ],
+  [
+   "disp",
+   "m6_dd.b"
+  ],
+  [
+   "m6_dd",
+   "m6_dd1.a"
+  ],
+  [
+   "m6_nu",
+   "m6_fo.a"
+  ],
+  [
+   "hzpc",
+   "m6_fo.b"
+  ],
+  [
+   "m6_fo",
+   "m6_fs.a"
+  ],
+  [
+   "m6_dd1",
+   "m6_fs.b"
+  ],
+  [
+   "m6_fs",
+   "m6_fe.a"
+  ],
+  [
+   "eratio",
+   "m6_fe.b"
+  ],
+  [
+   "$metamict",
+   "m6_gm.a"
+  ],
+  [
+   "m6_gm",
+   "m6_g.a"
+  ],
+  [
+   "m6_g",
+   "m6_bw.a"
+  ],
+  [
+   "wscale",
+   "m6_bw.b"
+  ],
+  [
+   "$exc",
+   "m6_ex.a"
+  ],
+  [
+   "m6_ex",
+   "m6_o.in"
+  ],
+  [
+   "m6_fs",
+   "m6_o.freq"
+  ],
+  [
+   "m6_bw",
+   "m6_o.width"
+  ],
+  [
+   "m6_o",
+   "sumO.a"
+  ],
+  [
+   "m6_ex",
+   "m6_e.in"
+  ],
+  [
+   "m6_fe",
+   "m6_e.freq"
+  ],
+  [
+   "m6_bw",
+   "m6_e.width"
+  ],
+  [
+   "m6_e",
+   "sumE.a"
+  ],
+  [
+   "$metamict",
+   "m7_sh.a"
+  ],
+  [
+   "m7_sh",
+   "m7_nu.a"
+  ],
+  [
+   "m7_nu",
+   "m7_rt.a"
+  ],
+  [
+   "m7_rt",
+   "m7_rm1.a"
+  ],
+  [
+   "m7_rm1",
+   "m7_dd.a"
+  ],
+  [
+   "disp",
+   "m7_dd.b"
+  ],
+  [
+   "m7_dd",
+   "m7_dd1.a"
+  ],
+  [
+   "m7_nu",
+   "m7_fo.a"
+  ],
+  [
+   "hzpc",
+   "m7_fo.b"
+  ],
+  [
+   "m7_fo",
+   "m7_fs.a"
+  ],
+  [
+   "m7_dd1",
+   "m7_fs.b"
+  ],
+  [
+   "m7_fs",
+   "m7_fe.a"
+  ],
+  [
+   "eratio",
+   "m7_fe.b"
+  ],
+  [
+   "$metamict",
+   "m7_gm.a"
+  ],
+  [
+   "m7_gm",
+   "m7_g.a"
+  ],
+  [
+   "m7_g",
+   "m7_bw.a"
+  ],
+  [
+   "wscale",
+   "m7_bw.b"
+  ],
+  [
+   "$exc",
+   "m7_ex.a"
+  ],
+  [
+   "m7_ex",
+   "m7_o.in"
+  ],
+  [
+   "m7_fs",
+   "m7_o.freq"
+  ],
+  [
+   "m7_bw",
+   "m7_o.width"
+  ],
+  [
+   "m7_o",
+   "sumO.a"
+  ],
+  [
+   "m7_ex",
+   "m7_e.in"
+  ],
+  [
+   "m7_fe",
+   "m7_e.freq"
+  ],
+  [
+   "m7_bw",
+   "m7_e.width"
+  ],
+  [
+   "m7_e",
+   "sumE.a"
+  ],
+  [
+   "sumO",
+   "Lo.a"
+  ],
+  [
+   "c2",
+   "Lo.b"
+  ],
+  [
+   "sumE",
+   "Le.a"
+  ],
+  [
+   "s2",
+   "Le.b"
+  ],
+  [
+   "Lo",
+   "L.a"
+  ],
+  [
+   "Le",
+   "L.b"
+  ],
+  [
+   "sumO",
+   "Ro.a"
+  ],
+  [
+   "s2",
+   "Ro.b"
+  ],
+  [
+   "sumE",
+   "Re.a"
+  ],
+  [
+   "c2",
+   "Re.b"
+  ],
+  [
+   "Ro",
+   "R.a"
+  ],
+  [
+   "Re",
+   "R.b"
+  ]
+ ]
+}

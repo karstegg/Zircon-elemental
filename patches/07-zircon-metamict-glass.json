@@ -1,0 +1,298 @@
+{
+ "name": "Zircon: Metamict Glass",
+ "doc": "Ancient, radiation-damaged zircon: bands downshifted and broadened toward amorphous glass. Warm, woody, short ring - a damped marimba from another planet.",
+ "voices": 8,
+ "modules": [
+  {
+   "id": "pm",
+   "type": "param",
+   "params": {
+    "name": "Metamict",
+    "min": 0,
+    "max": 1,
+    "default": 0.85,
+    "curve": "lin"
+   }
+  },
+  {
+   "id": "pb",
+   "type": "param",
+   "params": {
+    "name": "Birefringence",
+    "min": 0,
+    "max": 0.06,
+    "default": 0.012,
+    "curve": "lin"
+   }
+  },
+  {
+   "id": "pf",
+   "type": "param",
+   "params": {
+    "name": "Fire",
+    "min": 0,
+    "max": 3,
+    "default": 0.3,
+    "curve": "lin"
+   }
+  },
+  {
+   "id": "pt",
+   "type": "param",
+   "params": {
+    "name": "Temperature",
+    "min": 10,
+    "max": 1200,
+    "default": 300,
+    "curve": "exp"
+   }
+  },
+  {
+   "id": "pp",
+   "type": "param",
+   "params": {
+    "name": "Polarizer",
+    "min": 0,
+    "max": 90,
+    "default": 10,
+    "curve": "lin"
+   }
+  },
+  {
+   "id": "ph",
+   "type": "param",
+   "params": {
+    "name": "Mohs",
+    "min": 1,
+    "max": 10,
+    "default": 6.0,
+    "curve": "lin"
+   }
+  },
+  {
+   "id": "pa",
+   "type": "param",
+   "params": {
+    "name": "Activity",
+    "min": 1,
+    "max": 400,
+    "default": 3,
+    "curve": "exp"
+   }
+  },
+  {
+   "id": "pr",
+   "type": "param",
+   "params": {
+    "name": "Release",
+    "min": 0.05,
+    "max": 8,
+    "default": 0.6,
+    "curve": "exp"
+   }
+  },
+  {
+   "id": "pv",
+   "type": "param",
+   "params": {
+    "name": "Volume",
+    "min": 0,
+    "max": 1,
+    "default": 0.6,
+    "curve": "lin"
+   }
+  },
+  {
+   "id": "f",
+   "type": "NoteFreq",
+   "in": {
+    "transpose": 0
+   }
+  },
+  {
+   "id": "g",
+   "type": "gate"
+  },
+  {
+   "id": "v",
+   "type": "velocity"
+  },
+  {
+   "id": "hold",
+   "type": "adsr",
+   "in": {
+    "a": 0.002,
+    "d": 0.01,
+    "s": 1
+   }
+  },
+  {
+   "id": "act",
+   "type": "mul"
+  },
+  {
+   "id": "x",
+   "type": "AlphaStrike"
+  },
+  {
+   "id": "z",
+   "type": "ZirconLattice"
+  },
+  {
+   "id": "aL",
+   "type": "mul"
+  },
+  {
+   "id": "aR",
+   "type": "mul"
+  },
+  {
+   "id": "gL",
+   "type": "mul",
+   "in": {
+    "b": 0.52
+   }
+  },
+  {
+   "id": "gR",
+   "type": "mul",
+   "in": {
+    "b": 0.52
+   }
+  },
+  {
+   "id": "vL",
+   "type": "mul"
+  },
+  {
+   "id": "vR",
+   "type": "mul"
+  },
+  {
+   "id": "oL",
+   "type": "tanh"
+  },
+  {
+   "id": "oR",
+   "type": "tanh"
+  }
+ ],
+ "wires": [
+  [
+   "g",
+   "hold.gate"
+  ],
+  [
+   "pr",
+   "hold.r"
+  ],
+  [
+   "g",
+   "x.gate"
+  ],
+  [
+   "v",
+   "x.vel"
+  ],
+  [
+   "ph",
+   "x.mohs"
+  ],
+  [
+   "pa",
+   "act.a"
+  ],
+  [
+   "hold",
+   "act.b"
+  ],
+  [
+   "act",
+   "x.activity"
+  ],
+  [
+   "g",
+   "x.hold"
+  ],
+  [
+   "x",
+   "z.exc"
+  ],
+  [
+   "f",
+   "z.f0"
+  ],
+  [
+   "pm",
+   "z.metamict"
+  ],
+  [
+   "pb",
+   "z.biref"
+  ],
+  [
+   "pf",
+   "z.fire"
+  ],
+  [
+   "pt",
+   "z.temp"
+  ],
+  [
+   "pp",
+   "z.polar"
+  ],
+  [
+   "z.L",
+   "aL.a"
+  ],
+  [
+   "hold",
+   "aL.b"
+  ],
+  [
+   "z.R",
+   "aR.a"
+  ],
+  [
+   "hold",
+   "aR.b"
+  ],
+  [
+   "aL",
+   "gL.a"
+  ],
+  [
+   "aR",
+   "gR.a"
+  ],
+  [
+   "gL",
+   "vL.a"
+  ],
+  [
+   "pv",
+   "vL.b"
+  ],
+  [
+   "gR",
+   "vR.a"
+  ],
+  [
+   "pv",
+   "vR.b"
+  ],
+  [
+   "vL",
+   "oL.in"
+  ],
+  [
+   "vR",
+   "oR.in"
+  ]
+ ],
+ "out": {
+  "L": "oL.out",
+  "R": "oR.out"
+ }
+}

@@ -1,0 +1,268 @@
+{
+ "name": "AlphaStrike",
+ "doc": "Exciter: noise hammer whose length/brightness follow Mohs hardness (1..10), plus Poisson impulse clicks at `activity` Hz while `hold` > 0 (radioactive decay).",
+ "inputs": [
+  {
+   "name": "gate"
+  },
+  {
+   "name": "vel",
+   "default": 1
+  },
+  {
+   "name": "mohs",
+   "default": 7.5
+  },
+  {
+   "name": "activity",
+   "default": 0
+  },
+  {
+   "name": "hold",
+   "default": 0
+  }
+ ],
+ "outputs": {
+  "out": "mix.out"
+ },
+ "modules": [
+  {
+   "id": "n",
+   "type": "noise"
+  },
+  {
+   "id": "h1",
+   "type": "sub",
+   "in": {
+    "a": 11
+   }
+  },
+  {
+   "id": "dec",
+   "type": "mul",
+   "in": {
+    "b": 0.0015
+   }
+  },
+  {
+   "id": "env",
+   "type": "adsr",
+   "in": {
+    "a": 0.0003,
+    "s": 0,
+    "r": 0.002
+   }
+  },
+  {
+   "id": "hb",
+   "type": "mul",
+   "in": {
+    "b": 0.519860385
+   }
+  },
+  {
+   "id": "hx",
+   "type": "exp"
+  },
+  {
+   "id": "cut",
+   "type": "mul",
+   "in": {
+    "b": 400
+   }
+  },
+  {
+   "id": "cmin",
+   "type": "min",
+   "in": {
+    "b": 18000
+   }
+  },
+  {
+   "id": "lp",
+   "type": "OnePoleLP"
+  },
+  {
+   "id": "hit",
+   "type": "mul"
+  },
+  {
+   "id": "hv",
+   "type": "mul",
+   "in": {
+    "b": 0.12
+   }
+  },
+  {
+   "id": "sr",
+   "type": "sr"
+  },
+  {
+   "id": "rr",
+   "type": "div"
+  },
+  {
+   "id": "r2",
+   "type": "mul",
+   "in": {
+    "b": -2
+   }
+  },
+  {
+   "id": "th",
+   "type": "add",
+   "in": {
+    "b": 1
+   }
+  },
+  {
+   "id": "n2",
+   "type": "noise"
+  },
+  {
+   "id": "click",
+   "type": "gt"
+  },
+  {
+   "id": "n3",
+   "type": "noise"
+  },
+  {
+   "id": "camp",
+   "type": "mul"
+  },
+  {
+   "id": "ch",
+   "type": "mul"
+  },
+  {
+   "id": "cg",
+   "type": "mul",
+   "in": {
+    "b": 1.5
+   }
+  },
+  {
+   "id": "vel",
+   "type": "mul"
+  },
+  {
+   "id": "mix",
+   "type": "add"
+  }
+ ],
+ "wires": [
+  [
+   "$mohs",
+   "h1.b"
+  ],
+  [
+   "h1",
+   "dec.a"
+  ],
+  [
+   "dec",
+   "env.d"
+  ],
+  [
+   "$gate",
+   "env.gate"
+  ],
+  [
+   "$mohs",
+   "hb.a"
+  ],
+  [
+   "hb",
+   "hx.in"
+  ],
+  [
+   "hx",
+   "cut.a"
+  ],
+  [
+   "cut",
+   "cmin.a"
+  ],
+  [
+   "n",
+   "lp.in"
+  ],
+  [
+   "cmin",
+   "lp.cutoff"
+  ],
+  [
+   "lp",
+   "hit.a"
+  ],
+  [
+   "env",
+   "hit.b"
+  ],
+  [
+   "hit",
+   "hv.a"
+  ],
+  [
+   "$activity",
+   "rr.a"
+  ],
+  [
+   "sr",
+   "rr.b"
+  ],
+  [
+   "rr",
+   "r2.a"
+  ],
+  [
+   "r2",
+   "th.a"
+  ],
+  [
+   "n2",
+   "click.a"
+  ],
+  [
+   "th",
+   "click.b"
+  ],
+  [
+   "click",
+   "camp.a"
+  ],
+  [
+   "n3",
+   "camp.b"
+  ],
+  [
+   "camp",
+   "ch.a"
+  ],
+  [
+   "$hold",
+   "ch.b"
+  ],
+  [
+   "ch",
+   "cg.a"
+  ],
+  [
+   "hv",
+   "vel.a"
+  ],
+  [
+   "cg",
+   "vel.a"
+  ],
+  [
+   "$vel",
+   "vel.b"
+  ],
+  [
+   "vel",
+   "mix.a"
+  ]
+ ]
+}

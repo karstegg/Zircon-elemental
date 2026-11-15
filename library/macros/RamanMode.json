@@ -1,0 +1,209 @@
+{
+ "name": "RamanMode",
+ "doc": "Two-pole resonator from primitives. freq Hz, width = bandwidth Hz (FWHM). Input gain sin(w) keeps impulse response level equal across modes.",
+ "inputs": [
+  {
+   "name": "in"
+  },
+  {
+   "name": "freq",
+   "default": 440
+  },
+  {
+   "name": "width",
+   "default": 5
+  }
+ ],
+ "outputs": {
+  "out": "y.out"
+ },
+ "modules": [
+  {
+   "id": "sr",
+   "type": "sr"
+  },
+  {
+   "id": "wn",
+   "type": "div"
+  },
+  {
+   "id": "w",
+   "type": "mul",
+   "in": {
+    "b": 6.283185307
+   }
+  },
+  {
+   "id": "cw",
+   "type": "cos"
+  },
+  {
+   "id": "sw",
+   "type": "sin"
+  },
+  {
+   "id": "bn",
+   "type": "div"
+  },
+  {
+   "id": "bk",
+   "type": "mul",
+   "in": {
+    "b": -3.14159265
+   }
+  },
+  {
+   "id": "r",
+   "type": "exp"
+  },
+  {
+   "id": "r2",
+   "type": "mul"
+  },
+  {
+   "id": "a2",
+   "type": "neg"
+  },
+  {
+   "id": "rc",
+   "type": "mul"
+  },
+  {
+   "id": "a1",
+   "type": "mul",
+   "in": {
+    "b": 2
+   }
+  },
+  {
+   "id": "gx",
+   "type": "mul"
+  },
+  {
+   "id": "y1",
+   "type": "z1"
+  },
+  {
+   "id": "y2",
+   "type": "z1"
+  },
+  {
+   "id": "t1",
+   "type": "mul"
+  },
+  {
+   "id": "t2",
+   "type": "mul"
+  },
+  {
+   "id": "y",
+   "type": "add"
+  }
+ ],
+ "wires": [
+  [
+   "$freq",
+   "wn.a"
+  ],
+  [
+   "sr",
+   "wn.b"
+  ],
+  [
+   "wn",
+   "w.a"
+  ],
+  [
+   "w",
+   "cw.in"
+  ],
+  [
+   "w",
+   "sw.in"
+  ],
+  [
+   "$width",
+   "bn.a"
+  ],
+  [
+   "sr",
+   "bn.b"
+  ],
+  [
+   "bn",
+   "bk.a"
+  ],
+  [
+   "bk",
+   "r.in"
+  ],
+  [
+   "r",
+   "r2.a"
+  ],
+  [
+   "r",
+   "r2.b"
+  ],
+  [
+   "r2",
+   "a2.in"
+  ],
+  [
+   "r",
+   "rc.a"
+  ],
+  [
+   "cw",
+   "rc.b"
+  ],
+  [
+   "rc",
+   "a1.a"
+  ],
+  [
+   "$in",
+   "gx.a"
+  ],
+  [
+   "sw",
+   "gx.b"
+  ],
+  [
+   "a1",
+   "t1.a"
+  ],
+  [
+   "y1",
+   "t1.b"
+  ],
+  [
+   "a2",
+   "t2.a"
+  ],
+  [
+   "y2",
+   "t2.b"
+  ],
+  [
+   "gx",
+   "y.a"
+  ],
+  [
+   "t1",
+   "y.a"
+  ],
+  [
+   "t2",
+   "y.a"
+  ],
+  [
+   "y",
+   "y1.in"
+  ],
+  [
+   "y1",
+   "y2.in"
+  ]
+ ]
+}

@@ -19,7 +19,8 @@ as a VST3 plugin. Planned: modern UI and AI-assisted patch design.
 | Voice-parallel runtime (16 lanes, stealing, param smoothing) | ✅ |
 | 30+ math/logic/state primitives + native ADSR, ZDF SVF, delay | ✅ |
 | Macro library built from primitives (Phasor, Saw, SineOsc, ZDF OnePoleLP) | ✅ |
-| CLI render to WAV, test suite (11 tests) | ✅ |
+| CLI render to WAV, test suite (12 tests) | ✅ |
+| Zircon Lattice physical-model voice (3 presets) | ✅ |
 | JUCE plugin: VST3 + Standalone, factory patches as host programs, auto knob panel | ✅ passes pluginval strictness 7 |
 | Node-graph editor, CLAP/AU, `.sm` importer, AI designer | roadmap |
 
@@ -67,6 +68,8 @@ Linux deps: `libasound2-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-
 
 `01` primitive sine · `02` ZDF saw bass (filters from primitives) · `03` 2-op FM bell (DX-style) ·
 `04` Karplus-Strong pluck (physical model from primitives) · `05` SVF pad (local macro, stereo).
+
+**Zircon Lattice** (`06`–`08`): a voice built from zircon's own physics. Its Raman phonon modes are the partials, radiation damage (metamict) is the morph, birefringence gives stereo, and alpha decay is the exciter. See [docs/ZIRCON.md](docs/ZIRCON.md).
 
 ## Architecture
 
