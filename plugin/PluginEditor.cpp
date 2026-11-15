@@ -41,13 +41,12 @@ void ZirconLook::drawRotarySlider(juce::Graphics& g, int x, int y, int w, int h,
 
 ZirconEditor::ZirconEditor(ZirconProcessor& p) : AudioProcessorEditor(p), proc_(p) {
     setLookAndFeel(&look_);
-    for (int i = 0; i < proc_.getNumPrograms(); ++i) presets_.addItem(proc_.getProgramName(i), i + 1);
-    presets_.setSelectedId(proc_.getCurrentProgram() + 1, juce::dontSendNotification);
+    refreshPresets();
     presets_.onChange = [this] { proc_.setCurrentProgram(presets_.getSelectedId() - 1); };
     addAndMakeVisible(presets_);
 
     load_.onClick = [this] {
-        chooser_ = std::make_unique<juce::FileChooser>("Load Zircon patch", juce::File(), "*.json");
+        chooser_ = std::make_unique<juce::FileChooser>("Load Zircon patch (.json) or DX7 cartridge (.syx)", juce::File(), "*.json;*.syx");
         chooser_->launchAsync(juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles,
                               [this](const juce::FileChooser& fc) {
                                   auto f = fc.getResult();
@@ -62,6 +61,7 @@ ZirconEditor::ZirconEditor(ZirconProcessor& p) : AudioProcessorEditor(p), proc_(
     addAndMakeVisible(error_);
 
     addMouseListener(this, true);   // right-click anywhere (incl. over knobs) opens the context menu
+    proc_.onProgramListChanged = [this] { refreshPresets(); };
     proc_.onPatchChanged = [this] {
         rebuildKnobs();
         if (structure_ != nullptr && structure_->isVisible()) structure_->setPatch(proc_.patchName(), proc_.patchText());
@@ -76,10 +76,17 @@ ZirconEditor::ZirconEditor(ZirconProcessor& p) : AudioProcessorEditor(p), proc_(
 }
 
 ZirconEditor::~ZirconEditor() {
+    proc_.onProgramListChanged = nullptr;
     removeMouseListener(this);
     structure_.reset();
     proc_.onPatchChanged = nullptr;
     setLookAndFeel(nullptr);
+}
+
+void ZirconEditor::refreshPresets() {
+    presets_.clear(juce::dontSendNotification);
+    for (int i = 0; i < proc_.getNumPrograms(); ++i) presets_.addItem(proc_.getProgramName(i), i + 1);
+    presets_.setSelectedId(proc_.getCurrentProgram() + 1, juce::dontSendNotification);
 }
 
 void ZirconEditor::rebuildKnobs() {

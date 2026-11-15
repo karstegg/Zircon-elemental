@@ -3,6 +3,7 @@
 // program of register instructions that the Engine runs per sample,
 // vectorised across voices.
 #pragma once
+#include "zircon/dx7.hpp"
 #include "zircon/ops.hpp"
 #include <map>
 #include <stdexcept>
@@ -45,6 +46,7 @@ struct Program {
     std::vector<std::pair<int, float>> constRegs;   // register, value
     std::vector<ParamInfo> params;
     std::vector<DelayInfo> delays;
+    std::vector<dx7::Voice> dx7s;        // one per dx7 module
     int regSampleRate = -1, regPitch = -1, regGate = -1, regVel = -1, regSustain = -1, regModWheel = -1;
     std::vector<int> paramRegs;          // per param
     std::vector<int> adsrStates;         // state offsets of ADSRs (voice-free detection)

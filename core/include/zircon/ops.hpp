@@ -20,7 +20,7 @@ enum class Op {
     // conversions
     Mtof,
     // native premade modules
-    Adsr, Svf,
+    Adsr, Svf, Dx7,
     // internal
     Z1Write, DelayWrite
 };

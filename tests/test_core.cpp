@@ -1,6 +1,7 @@
 // Minimal self-contained test runner for the core engine.
 #include "zircon/compiler.hpp"
 #include "zircon/engine.hpp"
+#include "zircon/dx7.hpp"
 #include <cmath>
 #include <cstdio>
 #include <functional>
@@ -68,6 +69,96 @@ int main() {
         double dark = run(150.f, 0.5f), open = run(6000.f, 0.5f);
         CHECK(open > 5.0 * dark);
         run(1500.f, 3.8f);                    // self-oscillation region must stay bounded
+    });
+
+    test("dx7: algorithm table structure (carrier counts, modulators feed lower operators)", [&] {
+        const int expectCarriers[32] = {2,2,2,2,3,3,2,2,2,2,2,2,2,2,2,1,1,1,3,3,4,4,4,5,5,3,3,3,4,4,5,6};
+        for (int a = 0; a < 32; ++a) {
+            const auto& g = dx7::algorithm(a);
+            int n = 0; for (int i = 0; i < 6; ++i) n += (g.carriers >> i) & 1;
+            CHECK(n == expectCarriers[a]);
+            for (int i = 0; i < 6; ++i)
+                for (int j = 0; j < 6; ++j)
+                    if ((g.mods[i] >> j) & 1) CHECK(j > i);        // operator 6 modulates down toward 1
+        }
+    });
+
+    test("dx7: voice param round trip + packed SysEx parse", [&] {
+        dx7::Voice v;
+        v.algo = 17; v.fb = 5; v.trnsp = 30; v.lfw = 4; v.name = "ROUNDTRIP";
+        v.op[2].ol = 77; v.op[2].fc = 9; v.op[2].ff = 33; v.op[2].det = 11; v.op[2].rate[1] = 42; v.op[2].level[2] = 18;
+        v.op[2].lc = 2; v.op[2].rc = 1; v.op[2].rs = 5; v.op[2].ams = 2; v.op[2].kvs = 6; v.op[2].mode = 1;
+        dx7::Voice w;
+        CHECK(dx7::fromUnpacked(dx7::toUnpacked(v), w));
+        CHECK(w.algo == 17 && w.fb == 5 && w.trnsp == 30 && w.lfw == 4);
+        CHECK(w.op[2].ol == 77 && w.op[2].fc == 9 && w.op[2].ff == 33 && w.op[2].det == 11 && w.op[2].rate[1] == 42);
+        CHECK(w.op[2].lc == 2 && w.op[2].rc == 1 && w.op[2].rs == 5 && w.op[2].ams == 2 && w.op[2].kvs == 6 && w.op[2].mode == 1);
+        // hand-packed op1 (stored last, i = 5): check the bit layout of bytes 11..16
+        std::vector<uint8_t> bulk(4104, 0);
+        bulk[0] = 0xF0; bulk[1] = 0x43; bulk[3] = 0x09;
+        uint8_t* p = &bulk[6];                           // voice 0
+        uint8_t* o1 = p + 5 * 17;
+        o1[11] = 2 | (1 << 2);                           // LC=2 RC=1
+        o1[12] = 5 | (11 << 3);                          // RS=5 DET=11
+        o1[13] = 2 | (6 << 2);                           // AMS=2 KVS=6
+        o1[14] = 77; o1[15] = 1 | (9 << 1); o1[16] = 33; // OL, mode+coarse, fine
+        p[110] = 17; p[111] = 5 | (1 << 3); p[117] = 30;
+        auto voices = dx7::parseSysex(bulk);
+        CHECK(voices.size() == 32);
+        const auto& u = voices[0].op[0];
+        CHECK(u.lc == 2 && u.rc == 1 && u.rs == 5 && u.det == 11 && u.ams == 2 && u.kvs == 6);
+        CHECK(u.ol == 77 && u.mode == 1 && u.fc == 9 && u.ff == 33);
+        CHECK(voices[0].algo == 17 && voices[0].fb == 5 && voices[0].oks == 1 && voices[0].trnsp == 30);
+    });
+
+    test("dx7: organ plays the right pitch; e-piano decays while held, releases, frees voice", [&] {
+        {
+            Engine e(compilePatchFile(ZIRCON_SOURCE_DIR "/patches/16-dx7-ze-organ.json", L));
+            e.prepare(48000); e.noteOn(60, 1.f);
+            render(e, 4800);
+            auto x = render(e, 24000);
+            int best = 0; double bestR = -1e30;
+            for (int lag = 100; lag < 400; ++lag) {          // 120..480 Hz
+                double r = 0; for (size_t i = 0; i + (size_t)lag < x.size(); i += 2) r += x[i] * x[i + lag];
+                if (r > bestR) { bestR = r; best = lag; }
+            }
+            double f = 48000.0 / best;
+            CHECK(std::fabs(f - 261.63) < 4.0);
+        }
+        Engine e(compilePatchFile(ZIRCON_SOURCE_DIR "/patches/11-dx7-ze-epiano.json", L));
+        e.prepare(48000); e.noteOn(60, 1.f);
+        auto rms = [&](int n) { auto x = render(e, n); double r = 0; for (float v : x) r += v * v; return std::sqrt(r / n); };
+        double early = rms(4800);
+        render(e, 48000 * 3);
+        double late = rms(4800);
+        CHECK(early > 0.01 && late < 0.5 * early);           // decays while the key is held
+        e.noteOff(60);
+        render(e, 48000 * 4);
+        CHECK(e.activeVoices() == 0);
+    });
+
+    test("dx7: all factory voices finite, bounded, silent after release", [&] {
+        const char* names[] = {"11-dx7-ze-epiano", "12-dx7-ze-bells", "13-dx7-ze-bass", "14-dx7-ze-brass", "15-dx7-ze-marimba", "16-dx7-ze-organ"};
+        for (auto n : names) {
+            Engine e(compilePatchFile((std::string(ZIRCON_SOURCE_DIR) + "/patches/" + n + ".json").c_str(), L));
+            e.prepare(48000); e.noteOn(48, 0.9f); e.noteOn(55, 0.9f); e.noteOn(64, 0.9f);
+            auto x = render(e, 48000);
+            float pk = 0; for (float v : x) { CHECK(std::isfinite(v)); pk = std::max(pk, std::fabs(v)); }
+            CHECK(pk > 0.02f && pk < 1.5f);
+            e.noteOff(48); e.noteOff(55); e.noteOff(64);
+            render(e, 48000 * 8);
+            CHECK(e.activeVoices() == 0);
+        }
+    });
+
+    test("dx7: patchJson(voice) compiles and plays", [&] {
+        dx7::Voice v; v.algo = 4; v.name = "CART TEST";
+        v.op[0].ol = 99; v.op[1].ol = 70; v.op[1].fc = 2;
+        Engine e(compilePatch(dx7::patchJson(v), L));
+        e.prepare(48000); e.noteOn(60, 1.f);
+        auto x = render(e, 4800); float pk = 0; for (float f : x) pk = std::max(pk, std::fabs(f));
+        CHECK(pk > 0.02f);
+        CHECK(e.numParams() == 4);
     });
 
     test("mod wheel brightens the FM bell", [&] {

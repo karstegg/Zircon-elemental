@@ -40,6 +40,8 @@ const std::vector<OpSpec>& opCatalogue() {
         {Op::Mtof, "mtof", {{"in", 69.f}}, {"out"}, false, "MIDI note -> Hz", "math"},
         {Op::Adsr, "adsr", {{"gate"}, {"a", 0.01f}, {"d", 0.2f}, {"s", 0.7f}, {"r", 0.3f}}, {"out"}, false,
             "Native ADSR envelope (times in seconds)", "premade"},
+        {Op::Dx7, "dx7", {{"level", 1.f}, {"bright", 1.f}, {"rate", 1.f}, {"pmd", 0.f}}, {"out"}, false,
+            "DX7-style 6-op FM voice (params.voice = 155 DX7 values). Uses pitch/gate/velocity/modwheel of the voice", "premade"},
         {Op::Svf, "svf", {{"in"}, {"cutoff", 1000.f}, {"res", 0.2f}}, {"lp", "bp", "hp"}, false,
             "Native zero-delay-feedback state variable filter (TPT)", "premade"},
     };

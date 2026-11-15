@@ -35,7 +35,8 @@ public:
 
     // Compile + swap. Returns empty string on success, else the compile error.
     juce::String loadPatchText(const juce::String& json);
-    juce::String loadPatchFile(const juce::File& f);
+    juce::String loadPatchFile(const juce::File& f);      // .json patch or .syx DX7 cartridge
+    juce::String loadSysex(const juce::File& f);          // replaces cartridge programs with its voices
 
     juce::String patchName() const;
     juce::StringArray macroNames() const {
@@ -52,10 +53,11 @@ public:
     int activeVoices() const { return voicesActive_.load(); }
     float peakLevel() const { return peak_.load(); }
 
-    std::function<void()> onPatchChanged;   // editor hook (message thread)
+    std::function<void()> onPatchChanged;       // editor hook (message thread)
+    std::function<void()> onProgramListChanged; // program list replaced (e.g. .syx cartridge loaded)
 
 private:
-    struct Factory { juce::String name, json; };
+    struct Factory { juce::String name, json; bool cart = false; };
     juce::Array<Factory> factory_;
     int currentProgram_ = 0;
 

@@ -67,8 +67,27 @@ juce::String ZirconProcessor::loadPatchText(const juce::String& json) {
     return {};
 }
 
+juce::String ZirconProcessor::loadSysex(const juce::File& f) {
+    juce::MemoryBlock mb;
+    if (!f.loadFileAsData(mb)) return lastError_ = "could not read file";
+    std::vector<uint8_t> bytes((const uint8_t*)mb.getData(), (const uint8_t*)mb.getData() + mb.getSize());
+    auto voices = zircon::dx7::parseSysex(bytes);
+    if (voices.empty()) return lastError_ = "not a DX7 SysEx dump (expected a 32-voice bulk or single-voice .syx)";
+    for (int i = factory_.size(); --i >= 0;) if (factory_.getReference(i).cart) factory_.remove(i);
+    const int first = factory_.size();
+    for (auto& v : voices) {
+        juce::String json(zircon::dx7::patchJson(v));
+        factory_.add({juce::JSON::parse(json).getProperty("name", "DX7").toString(), json, true});
+    }
+    setCurrentProgram(first);
+    updateHostDisplay(ChangeDetails().withProgramChanged(true));
+    if (onProgramListChanged) juce::MessageManager::callAsync([this] { if (onProgramListChanged) onProgramListChanged(); });
+    return lastError_;
+}
+
 juce::String ZirconProcessor::loadPatchFile(const juce::File& f) {
     if (!f.existsAsFile()) return lastError_ = "file not found";
+    if (f.hasFileExtension("syx")) return loadSysex(f);
     return loadPatchText(f.loadFileAsString());
 }
 
@@ -135,7 +154,7 @@ void ZirconProcessor::getStateInformation(juce::MemoryBlock& dest) {
 void ZirconProcessor::setStateInformation(const void* data, int size) {
     auto st = juce::ValueTree::readFromData(data, (size_t)size);
     if (!st.isValid()) return;
-    currentProgram_ = st.getProperty("program", 0);
+    currentProgram_ = juce::jlimit(0, std::max(0, factory_.size() - 1), (int)st.getProperty("program", 0));
     loadPatchText(st.getProperty("patch").toString());
     for (int i = 0; i < kHostParams; ++i)
         if (st.hasProperty("p" + juce::String(i + 1)))

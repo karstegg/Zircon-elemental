@@ -390,6 +390,16 @@ Program compilePatch(const std::string& text, const MacroLibrary& lib) {
             writes.push_back(W);
             continue;
         }
+        if (s->op == Op::Dx7) {
+            dx7::Voice voice;
+            std::vector<int> vals;
+            if (fn.params.contains("voice") && fn.params["voice"].is_array())
+                for (auto& x : fn.params["voice"]) vals.push_back(x.get<int>());
+            if (!dx7::fromUnpacked(vals, voice))
+                throw CompileError("dx7 module '" + fn.id + "' needs params.voice with at least 145 DX7 parameter values");
+            I.slot = (int)prog.dx7s.size();
+            prog.dx7s.push_back(voice);
+        }
         if (s->op == Op::Noise) { I.state = prog.stateFloats; prog.stateFloats += 1; }
         if (s->op == Op::Adsr) { I.state = prog.stateFloats; prog.stateFloats += 3; prog.adsrStates.push_back(I.state); }
         if (s->op == Op::Svf) { I.state = prog.stateFloats; prog.stateFloats += 2; }

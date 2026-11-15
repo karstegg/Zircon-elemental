@@ -13,6 +13,7 @@ option(ZIRCON_BUILD_PLUGIN "Build the JUCE VST3/CLAP/standalone plugin" OFF)
 # ---- core engine (no dependencies beyond the bundled single-header JSON)
 add_library(zircon_core STATIC
   core/src/ops.cpp
+  core/src/dx7.cpp
   core/src/compiler.cpp
   core/src/engine.cpp)
 target_include_directories(zircon_core PUBLIC core/include third_party)

@@ -23,6 +23,7 @@ void Engine::prepare(double sampleRate) {
     rng_.assign((size_t)std::max(1, prog_.stateFloats) * kMaxLanes, 0);
     for (size_t i = 0; i < rng_.size(); ++i) rng_[i] = 0x9E3779B9u * (uint32_t)(i + 1);
     delays_.clear();
+    dx7Lanes_.assign(prog_.dx7s.size() * kMaxLanes, dx7::Lane());
     for (auto& d : prog_.delays)
         for (int l = 0; l < kMaxLanes; ++l) {
             DelayBuf b; b.size = (int)std::ceil(d.maxSeconds * sr_) + 4; b.buf.assign(b.size, 0.f);
@@ -52,6 +53,9 @@ void Engine::setParamNormalized(int i, float x) {
 
 // ---------------------------------------------------------------- voices
 bool Engine::laneIdle(int l) const {
+    for (size_t d = 0; d < prog_.dx7s.size(); ++d)
+        if (dx7Lanes_[d * kMaxLanes + l].busy()) return false;
+    if (prog_.adsrStates.empty() && !prog_.dx7s.empty()) return true;
     if (prog_.adsrStates.empty()) return !voices_[l].gate;
     for (int s : prog_.adsrStates)
         if (state_[(size_t)s * kMaxLanes + l] != 0.f) return false;   // stage 0 == idle
@@ -59,6 +63,7 @@ bool Engine::laneIdle(int l) const {
 }
 
 void Engine::clearLane(int l) {
+    for (size_t d = 0; d < prog_.dx7s.size(); ++d) dx7Lanes_[d * kMaxLanes + l].reset();
     for (int s = 0; s < prog_.stateFloats; ++s) state_[(size_t)s * kMaxLanes + l] = 0.f;   // rng_ is left alone (xorshift must not be 0)
     for (size_t d = 0; d < prog_.delays.size(); ++d) {
         auto& b = delays_[d * kMaxLanes + l];
@@ -203,6 +208,14 @@ void Engine::runSample() {
                 }
                 o[v] = lv[v];
             }
+        } break;
+
+        case Op::Dx7: {
+            const float* vlev = a; const float* vbr = b; const float* vrate = c; const float* vpmd = R(I.in[3]);
+            const float* mw = R(prog_.regModWheel);
+            const dx7::Voice& dv = prog_.dx7s[(size_t)I.slot];
+            dx7::Lane* lanes = &dx7Lanes_[(size_t)I.slot * kMaxLanes];
+            LANES o[v] = lanes[v].tick(dv, pitch[v], gate[v] > 0.5f, vel[v], mw[v], vlev[v], vbr[v], vrate[v], vpmd[v], sr);
         } break;
 
         case Op::Svf: {   // Zavalishin / Cytomic TPT state-variable filter

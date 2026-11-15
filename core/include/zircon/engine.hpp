@@ -50,6 +50,7 @@ private:
     std::vector<uint32_t> rng_;
     struct DelayBuf { std::vector<float> buf; int size = 0; int pos = 0; };
     std::vector<DelayBuf> delays_;   // delays * lanes
+    std::vector<dx7::Lane> dx7Lanes_; // dx7 modules * kMaxLanes
     std::vector<float> paramTarget_, paramValue_;
     float paramCoef_ = 0.f;
     std::vector<Voice> voices_;

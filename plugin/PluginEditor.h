@@ -23,6 +23,7 @@ public:
 private:
     void timerCallback() override;
     void rebuildKnobs();
+    void refreshPresets();
     void showStructure();
 
     ZirconProcessor& proc_;
