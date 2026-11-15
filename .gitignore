@@ -1,0 +1,5 @@
+build*/
+renders/
+third_party/JUCE/
+.DS_Store
+*.user

@@ -1,0 +1,25 @@
+{
+  "name": "2-Op FM Bell",
+  "doc": "DX-style 2-operator FM from primitives: modulator SineOsc -> carrier pm, index decays with its own envelope.",
+  "voices": 8,
+  "modules": [
+    {"id": "f", "type": "NoteFreq"},
+    {"id": "ratio", "type": "param", "params": {"name": "Ratio", "min": 0.5, "max": 8, "default": 3.5}},
+    {"id": "index", "type": "param", "params": {"name": "Index", "min": 0, "max": 4, "default": 1.6}},
+    {"id": "mf", "type": "mul"},
+    {"id": "mod", "type": "SineOsc"},
+    {"id": "g", "type": "gate"},
+    {"id": "menv", "type": "adsr", "in": {"a": 0.001, "d": 1.2, "s": 0.05, "r": 1.0}},
+    {"id": "mi", "type": "mul"}, {"id": "mi2", "type": "mul"},
+    {"id": "car", "type": "SineOsc"},
+    {"id": "aenv", "type": "adsr", "in": {"a": 0.001, "d": 2.5, "s": 0.0, "r": 1.5}},
+    {"id": "vca", "type": "mul"}, {"id": "lvl", "type": "mul", "in": {"b": 0.22}}
+  ],
+  "wires": [
+    ["f", "mf.a"], ["ratio", "mf.b"], ["mf", "mod.freq"],
+    ["g", "menv.gate"], ["mod", "mi.a"], ["menv", "mi.b"], ["mi", "mi2.a"], ["index", "mi2.b"],
+    ["f", "car.freq"], ["mi2", "car.pm"],
+    ["g", "aenv.gate"], ["car", "vca.a"], ["aenv", "vca.b"], ["vca", "lvl.a"]
+  ],
+  "out": "lvl.out"
+}

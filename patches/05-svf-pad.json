@@ -1,0 +1,41 @@
+{
+  "name": "SVF Pad",
+  "doc": "Three detuned saws -> native ZDF state-variable filter, cutoff swept by a primitive LFO. Stereo spread.",
+  "voices": 8,
+  "modules": [
+    {"id": "fa", "type": "NoteFreq", "in": {"transpose": -0.08}},
+    {"id": "fb", "type": "NoteFreq"},
+    {"id": "fc", "type": "NoteFreq", "in": {"transpose": 0.09}},
+    {"id": "sa", "type": "Saw"}, {"id": "sb", "type": "Saw"}, {"id": "sc", "type": "Saw"},
+    {"id": "rate", "type": "param", "params": {"name": "LFO Rate", "min": 0.05, "max": 5, "default": 0.25, "curve": "exp"}},
+    {"id": "lfo", "type": "SineOsc"},
+    {"id": "cut", "type": "param", "params": {"name": "Cutoff", "min": 100, "max": 8000, "default": 900, "curve": "exp"}},
+    {"id": "res", "type": "param", "params": {"name": "Resonance", "min": 0, "max": 0.95, "default": 0.55}},
+    {"id": "oct", "type": "mul", "in": {"b": 1.5}},
+    {"id": "ex", "type": "exp2"},
+    {"id": "fcut", "type": "mul"},
+    {"id": "filtL", "type": "svf"}, {"id": "filtR", "type": "svf"},
+    {"id": "g", "type": "gate"},
+    {"id": "env", "type": "adsr", "in": {"a": 0.8, "d": 1.0, "s": 0.8, "r": 1.5}},
+    {"id": "vL", "type": "mul"}, {"id": "vR", "type": "mul"},
+    {"id": "lL", "type": "mul", "in": {"b": 0.12}}, {"id": "lR", "type": "mul", "in": {"b": 0.12}}
+  ],
+  "macros": {
+    "exp2": {
+      "doc": "2^x from primitives: exp(x * ln2). Local macro defined inside the patch.",
+      "inputs": ["x"], "outputs": {"out": "e.out"},
+      "modules": [{"id": "k", "type": "mul", "in": {"b": 0.693147}}, {"id": "e", "type": "exp"}],
+      "wires": [["$x", "k.a"], ["k", "e.in"]]
+    }
+  },
+  "wires": [
+    ["fa", "sa.freq"], ["fb", "sb.freq"], ["fc", "sc.freq"],
+    ["rate", "lfo.freq"], ["lfo", "oct.a"], ["oct", "ex.x"], ["ex", "fcut.a"], ["cut", "fcut.b"],
+    ["sa", "filtL.in"], ["sb", "filtL.in"], ["sb", "filtR.in"], ["sc", "filtR.in"],
+    ["fcut", "filtL.cutoff"], ["fcut", "filtR.cutoff"], ["res", "filtL.res"], ["res", "filtR.res"],
+    ["g", "env.gate"],
+    ["filtL.lp", "vL.a"], ["env", "vL.b"], ["vL", "lL.a"],
+    ["filtR.lp", "vR.a"], ["env", "vR.b"], ["vR", "lR.a"]
+  ],
+  "out": {"L": "lL.out", "R": "lR.out"}
+}

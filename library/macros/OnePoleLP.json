@@ -1,0 +1,26 @@
+{
+  "name": "OnePoleLP",
+  "doc": "Zero-delay-feedback (TPT) one-pole lowpass from primitives. g = tan(pi fc/fs), G = g/(1+g); v=(x-s)G; y=v+s; s'=y+v.",
+  "inputs": [{"name": "in", "default": 0}, {"name": "cutoff", "default": 1000}],
+  "outputs": {"out": "y.out"},
+  "modules": [
+    {"id": "sr", "type": "sr"},
+    {"id": "norm", "type": "div"},
+    {"id": "w", "type": "mul", "in": {"b": 3.14159265}},
+    {"id": "g", "type": "tan"},
+    {"id": "g1", "type": "add", "in": {"b": 1}},
+    {"id": "G", "type": "div"},
+    {"id": "s", "type": "z1"},
+    {"id": "err", "type": "sub"},
+    {"id": "v", "type": "mul"},
+    {"id": "y", "type": "add"},
+    {"id": "snext", "type": "add"}
+  ],
+  "wires": [
+    ["$cutoff", "norm.a"], ["sr", "norm.b"], ["norm", "w.a"], ["w", "g.in"],
+    ["g", "g1.a"], ["g", "G.a"], ["g1", "G.b"],
+    ["$in", "err.a"], ["s", "err.b"], ["err", "v.a"], ["G", "v.b"],
+    ["v", "y.a"], ["s", "y.b"],
+    ["y", "snext.a"], ["v", "snext.b"], ["snext", "s.in"]
+  ]
+}

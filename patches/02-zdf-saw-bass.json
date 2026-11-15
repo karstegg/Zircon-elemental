@@ -1,0 +1,240 @@
+{
+ "name": "ZDF Saw Bass",
+ "doc": "Two detuned primitive saws into two cascaded primitive ZDF one-pole lowpasses with filter envelope.",
+ "voices": 6,
+ "modules": [
+  {
+   "id": "det",
+   "type": "param",
+   "params": {
+    "name": "Detune",
+    "min": 0,
+    "max": 0.5,
+    "default": 0.12
+   }
+  },
+  {
+   "id": "t1",
+   "type": "add",
+   "in": {
+    "b": -12
+   }
+  },
+  {
+   "id": "f1",
+   "type": "NoteFreq"
+  },
+  {
+   "id": "detneg",
+   "type": "neg"
+  },
+  {
+   "id": "t2",
+   "type": "add",
+   "in": {
+    "b": -12
+   }
+  },
+  {
+   "id": "f2",
+   "type": "NoteFreq"
+  },
+  {
+   "id": "s1",
+   "type": "Saw"
+  },
+  {
+   "id": "s2",
+   "type": "Saw"
+  },
+  {
+   "id": "mix",
+   "type": "mul",
+   "in": {
+    "b": 0.5
+   }
+  },
+  {
+   "id": "g",
+   "type": "gate"
+  },
+  {
+   "id": "fenv",
+   "type": "adsr",
+   "in": {
+    "a": 0.002,
+    "d": 0.25,
+    "s": 0.15,
+    "r": 0.2
+   }
+  },
+  {
+   "id": "cut",
+   "type": "param",
+   "params": {
+    "name": "Cutoff",
+    "min": 60,
+    "max": 12000,
+    "default": 400,
+    "curve": "exp"
+   }
+  },
+  {
+   "id": "envamt",
+   "type": "param",
+   "params": {
+    "name": "Env Amount",
+    "min": 0,
+    "max": 8,
+    "default": 4
+   }
+  },
+  {
+   "id": "em",
+   "type": "mul"
+  },
+  {
+   "id": "em1",
+   "type": "add",
+   "in": {
+    "b": 1
+   }
+  },
+  {
+   "id": "fc",
+   "type": "mul"
+  },
+  {
+   "id": "lp1",
+   "type": "OnePoleLP"
+  },
+  {
+   "id": "lp2",
+   "type": "OnePoleLP"
+  },
+  {
+   "id": "aenv",
+   "type": "adsr",
+   "in": {
+    "a": 0.003,
+    "d": 0.4,
+    "s": 0.8,
+    "r": 0.15
+   }
+  },
+  {
+   "id": "vca",
+   "type": "mul"
+  },
+  {
+   "id": "lvl",
+   "type": "mul",
+   "in": {
+    "b": 0.4
+   }
+  },
+  {
+   "id": "sat",
+   "type": "tanh"
+  }
+ ],
+ "wires": [
+  [
+   "det",
+   "t1.a"
+  ],
+  [
+   "t1",
+   "f1.transpose"
+  ],
+  [
+   "det",
+   "detneg.in"
+  ],
+  [
+   "detneg",
+   "t2.a"
+  ],
+  [
+   "t2",
+   "f2.transpose"
+  ],
+  [
+   "f1",
+   "s1.freq"
+  ],
+  [
+   "f2",
+   "s2.freq"
+  ],
+  [
+   "s1",
+   "mix.a"
+  ],
+  [
+   "s2",
+   "mix.a"
+  ],
+  [
+   "g",
+   "fenv.gate"
+  ],
+  [
+   "fenv",
+   "em.a"
+  ],
+  [
+   "envamt",
+   "em.b"
+  ],
+  [
+   "em",
+   "em1.a"
+  ],
+  [
+   "em1",
+   "fc.a"
+  ],
+  [
+   "cut",
+   "fc.b"
+  ],
+  [
+   "mix",
+   "lp1.in"
+  ],
+  [
+   "fc",
+   "lp1.cutoff"
+  ],
+  [
+   "lp1",
+   "lp2.in"
+  ],
+  [
+   "fc",
+   "lp2.cutoff"
+  ],
+  [
+   "g",
+   "aenv.gate"
+  ],
+  [
+   "lp2",
+   "vca.a"
+  ],
+  [
+   "aenv",
+   "vca.b"
+  ],
+  [
+   "vca",
+   "lvl.a"
+  ],
+  [
+   "lvl",
+   "sat.in"
+  ]
+ ],
+ "out": "sat.out"
+}

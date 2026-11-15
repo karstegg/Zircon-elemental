@@ -1,0 +1,13 @@
+{
+  "name": "SineOsc",
+  "doc": "Sine oscillator with phase-modulation input (pm in cycles) - the DX7 operator core.",
+  "inputs": [{"name": "freq", "default": 440}, {"name": "pm", "default": 0}],
+  "outputs": {"out": "s.out"},
+  "modules": [
+    {"id": "ph", "type": "Phasor"},
+    {"id": "sum", "type": "add"},
+    {"id": "rad", "type": "mul", "in": {"b": 6.283185307}},
+    {"id": "s", "type": "sin"}
+  ],
+  "wires": [["$freq", "ph.freq"], ["ph", "sum.a"], ["$pm", "sum.b"], ["sum", "rad.a"], ["rad", "s.in"]]
+}

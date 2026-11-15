@@ -1,0 +1,8 @@
+{
+  "name": "NoteFreq",
+  "doc": "Voice pitch + transpose (semitones) -> Hz.",
+  "inputs": [{"name": "transpose", "default": 0}],
+  "outputs": {"out": "hz.out"},
+  "modules": [{"id": "p", "type": "pitch"}, {"id": "t", "type": "add"}, {"id": "hz", "type": "mtof"}],
+  "wires": [["p", "t.a"], ["$transpose", "t.b"], ["t", "hz.in"]]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "Saw",
+  "doc": "Naive bipolar sawtooth (Phasor * 2 - 1). PolyBLEP version is a planned native module.",
+  "inputs": [{"name": "freq", "default": 110}],
+  "outputs": {"out": "bias.out"},
+  "modules": [
+    {"id": "ph", "type": "Phasor"},
+    {"id": "x2", "type": "mul", "in": {"b": 2}},
+    {"id": "bias", "type": "sub", "in": {"b": 1}}
+  ],
+  "wires": [["$freq", "ph.freq"], ["ph", "x2.a"], ["x2", "bias.a"]]
+}

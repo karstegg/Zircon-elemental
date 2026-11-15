@@ -1,0 +1,19 @@
+{
+  "name": "Primitive Sine",
+  "doc": "Simplest voice: sine from math primitives x ADSR x velocity.",
+  "voices": 8,
+  "modules": [
+    {"id": "f", "type": "NoteFreq"},
+    {"id": "osc", "type": "SineOsc"},
+    {"id": "g", "type": "gate"},
+    {"id": "env", "type": "adsr", "in": {"a": 0.01, "d": 0.3, "s": 0.6, "r": 0.5}},
+    {"id": "vel", "type": "velocity"},
+    {"id": "vol", "type": "param", "params": {"name": "Volume", "min": 0, "max": 1, "default": 0.25}},
+    {"id": "amp", "type": "mul"}, {"id": "amp2", "type": "mul"}, {"id": "amp3", "type": "mul"}
+  ],
+  "wires": [
+    ["f", "osc.freq"], ["g", "env.gate"],
+    ["osc", "amp.a"], ["env", "amp.b"], ["amp", "amp2.a"], ["vel", "amp2.b"], ["amp2", "amp3.a"], ["vol", "amp3.b"]
+  ],
+  "out": "amp3.out"
+}

@@ -1,0 +1,28 @@
+{
+  "name": "Karplus Pluck",
+  "doc": "Physical model from primitives: noise burst excites a delay-line loop damped by a ZDF lowpass. The feedback loop is closed by the delay.",
+  "voices": 8,
+  "modules": [
+    {"id": "f", "type": "NoteFreq"},
+    {"id": "period", "type": "div", "in": {"a": 1}},
+    {"id": "n", "type": "noise"},
+    {"id": "g", "type": "gate"},
+    {"id": "burst", "type": "adsr", "in": {"a": 0.0005, "d": 0.015, "s": 0, "r": 0.005}},
+    {"id": "exc", "type": "mul"},
+    {"id": "line", "type": "delay", "params": {"max": 0.05}},
+    {"id": "bright", "type": "param", "params": {"name": "Brightness", "min": 500, "max": 16000, "default": 5000, "curve": "exp"}},
+    {"id": "damp", "type": "OnePoleLP"},
+    {"id": "fbk", "type": "param", "params": {"name": "Sustain", "min": 0.9, "max": 0.999, "default": 0.995}},
+    {"id": "fb", "type": "mul"},
+    {"id": "hold", "type": "adsr", "in": {"a": 0.001, "d": 0.01, "s": 1, "r": 3}},
+    {"id": "vca", "type": "mul"}, {"id": "lvl", "type": "mul", "in": {"b": 0.5}}
+  ],
+  "wires": [
+    ["f", "period.b"], ["period", "line.time"],
+    ["g", "burst.gate"], ["n", "exc.a"], ["burst", "exc.b"],
+    ["exc", "line.in"], ["fb", "line.in"],
+    ["line", "damp.in"], ["bright", "damp.cutoff"], ["damp", "fb.a"], ["fbk", "fb.b"],
+    ["g", "hold.gate"], ["line", "vca.a"], ["hold", "vca.b"], ["vca", "lvl.a"]
+  ],
+  "out": "lvl.out"
+}
