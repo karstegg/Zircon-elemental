@@ -36,7 +36,20 @@ public:
     // Compile + swap. Returns empty string on success, else the compile error.
     juce::String loadPatchText(const juce::String& json);
     juce::String loadPatchFile(const juce::File& f);      // .json patch or .syx DX7 cartridge
-    juce::String loadSysex(const juce::File& f);          // replaces cartridge programs with its voices
+    juce::String loadSysex(const juce::File& f);          // loads a cartridge into the DX7 instrument
+    juce::String saveSysex(const juce::File& f);          // writes the cartridge as a 32-voice bulk dump
+
+    // DX7 instrument: live voice + cartridge (32 slots)
+    bool dx7Active() const { return dx7Active_.load(); }
+    zircon::dx7::Voice dx7Voice();                        // copy of the live voice
+    void setDx7Voice(const zircon::dx7::Voice&);          // live edit (audio thread safe)
+    int cartSize() const { return (int)cart_.size(); }
+    juce::String cartName(int i) const;
+    int cartIndex() const { return cartIndex_; }
+    void selectCartVoice(int i);                          // store pending edit, then switch
+    void storeToCart();                                   // write the live voice into its slot
+    void initDx7Voice();
+    std::function<void()> onCartChanged;
 
     juce::String patchName() const;
     juce::StringArray macroNames() const {
@@ -57,7 +70,11 @@ public:
     std::function<void()> onProgramListChanged; // program list replaced (e.g. .syx cartridge loaded)
 
 private:
-    struct Factory { juce::String name, json; bool cart = false; };
+    struct Factory { juce::String name, json; };
+    std::vector<zircon::dx7::Voice> cart_;
+    int cartIndex_ = 0;
+    std::atomic<bool> dx7Active_{false};
+    void applyDx7ToEngine(const zircon::dx7::Voice&);
     juce::Array<Factory> factory_;
     int currentProgram_ = 0;
 
@@ -65,6 +82,7 @@ private:
     std::shared_ptr<zircon::Engine> engine_;      // swapped under lock_
     juce::SpinLock lock_;
     juce::String patchText_, lastError_;
+    juce::String pendingDx7_;   // restored voice text, applied after the patch compiles
     double sampleRate_ = 48000.0;
 
     std::array<juce::RangedAudioParameter*, kHostParams> hostParams_{};

@@ -64,11 +64,14 @@ ZirconEditor::ZirconEditor(ZirconProcessor& p) : AudioProcessorEditor(p), proc_(
     proc_.onProgramListChanged = [this] { refreshPresets(); };
     proc_.onPatchChanged = [this] {
         rebuildKnobs();
+        updateMode();
         if (structure_ != nullptr && structure_->isVisible()) structure_->setPatch(proc_.patchName(), proc_.patchText());
         presets_.setSelectedId(proc_.getCurrentProgram() + 1, juce::dontSendNotification);
         error_.setText(proc_.lastError(), juce::dontSendNotification);
     };
+    addChildComponent(dxView_);
     rebuildKnobs();
+    updateMode();
     setResizable(true, true);
     setResizeLimits(520, 300, 1600, 1000);
     setSize(760, 420);
@@ -76,6 +79,8 @@ ZirconEditor::ZirconEditor(ZirconProcessor& p) : AudioProcessorEditor(p), proc_(
 }
 
 ZirconEditor::~ZirconEditor() {
+    dxView_.setViewedComponent(nullptr, false);
+    dx_.reset();
     proc_.onProgramListChanged = nullptr;
     removeMouseListener(this);
     structure_.reset();
@@ -87,6 +92,23 @@ void ZirconEditor::refreshPresets() {
     presets_.clear(juce::dontSendNotification);
     for (int i = 0; i < proc_.getNumPrograms(); ++i) presets_.addItem(proc_.getProgramName(i), i + 1);
     presets_.setSelectedId(proc_.getCurrentProgram() + 1, juce::dontSendNotification);
+}
+
+void ZirconEditor::updateMode() {
+    const bool dx = proc_.dx7Active();
+    if (dx) {
+        dx_ = std::make_unique<Dx7Panel>(proc_);
+        dxView_.setViewedComponent(dx_.get(), false);
+        dxView_.setScrollBarsShown(true, false);
+        if (!dxView_.isVisible() && getWidth() < Dx7Panel::kWidth + 40) setSize(Dx7Panel::kWidth + 40, 840);
+    } else {
+        dxView_.setViewedComponent(nullptr, false);
+        dx_.reset();
+    }
+    dxView_.setVisible(dx);
+    for (auto& k : knobs_) { k->slider.setVisible(!dx); k->label.setVisible(!dx); }
+    resized();
+    repaint();
 }
 
 void ZirconEditor::rebuildKnobs() {
@@ -120,6 +142,7 @@ void ZirconEditor::paint(juce::Graphics& g) {
 
     b.removeFromTop(8);
     auto panel = b.withTrimmedBottom(26);
+    if (dx_ != nullptr) return;
     g.setColour(col::panel);
     g.fillRoundedRectangle(panel.toFloat(), 10.f);
     g.setColour(col::edge);
@@ -151,6 +174,8 @@ void ZirconEditor::resized() {
     b.removeFromTop(8);
     error_.setBounds(b.removeFromBottom(22));
     b.removeFromBottom(4);
+    dxView_.setBounds(b);
+    if (dx_ != nullptr) dx_->setSize(std::max(Dx7Panel::kWidth, b.getWidth() - 16), Dx7Panel::kHeight);
     auto panel = b.reduced(16, 10);
     panel.removeFromTop(34);
     panel.removeFromRight(20);

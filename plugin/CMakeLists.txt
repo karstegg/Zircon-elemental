@@ -33,7 +33,7 @@ elseif(ZIRCON_ASIO_SDK)
   message(WARNING "ZIRCON_ASIO_SDK set but common/iasiodrv.h not found; ASIO disabled")
 endif()
 
-target_sources(ZirconElemental PRIVATE PluginProcessor.cpp PluginEditor.cpp StructureView.cpp)
+target_sources(ZirconElemental PRIVATE PluginProcessor.cpp PluginEditor.cpp StructureView.cpp Dx7Panel.cpp)
 target_compile_definitions(ZirconElemental PUBLIC
   JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_VST3_CAN_REPLACE_VST2=0 JUCE_DISPLAY_SPLASH_SCREEN=0)
 target_link_libraries(ZirconElemental

@@ -2,6 +2,7 @@
 #include <juce_audio_utils/juce_audio_utils.h>
 #include "PluginProcessor.h"
 #include "StructureView.h"
+#include "Dx7Panel.h"
 
 // v0 "panel view": header (preset picker, load, status) + auto-generated
 // knob panel from the patch's params. The node-graph structure view is P2.
@@ -25,6 +26,7 @@ private:
     void rebuildKnobs();
     void refreshPresets();
     void showStructure();
+    void updateMode();    // DX7 instrument panel vs generic knob panel
 
     ZirconProcessor& proc_;
     ZirconLook look_;
@@ -33,6 +35,8 @@ private:
     juce::Label status_, error_;
     std::unique_ptr<juce::FileChooser> chooser_;
     std::unique_ptr<StructureWindow> structure_;
+    juce::Viewport dxView_;
+    std::unique_ptr<Dx7Panel> dx_;
 
     struct Knob {
         juce::Slider slider;

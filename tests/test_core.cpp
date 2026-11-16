@@ -111,6 +111,21 @@ int main() {
         CHECK(voices[0].algo == 17 && voices[0].fb == 5 && voices[0].oks == 1 && voices[0].trnsp == 30);
     });
 
+    test("dx7: toSysex -> parseSysex round trip", [&] {
+        dx7::Voice v;
+        v.algo = 21; v.fb = 3; v.trnsp = 20; v.lfw = 5; v.lpms = 6; v.lks = 0; v.name = "SYXTEST";
+        v.op[4].ol = 66; v.op[4].fc = 12; v.op[4].ff = 71; v.op[4].det = 3; v.op[4].mode = 1; v.op[4].rate[2] = 55;
+        v.op[4].lc = 3; v.op[4].rc = 2; v.op[4].rs = 4; v.op[4].ams = 1; v.op[4].kvs = 5; v.op[4].bp = 50;
+        v.plevel[1] = 20; v.prate[3] = 33;
+        auto bytes = dx7::toSysex({v});
+        CHECK(bytes.size() == 4104 && bytes[0] == 0xF0 && bytes.back() == 0xF7);
+        int sum = 0; for (size_t i = 6; i < 6 + 4096; ++i) sum += bytes[i];
+        CHECK(((sum + bytes[4102]) & 127) == 0);
+        auto vs = dx7::parseSysex(bytes);
+        CHECK(vs.size() == 32);
+        CHECK(dx7::toUnpacked(vs[0]) == dx7::toUnpacked(v));
+    });
+
     test("dx7: organ plays the right pitch; e-piano decays while held, releases, frees voice", [&] {
         {
             Engine e(compilePatchFile(ZIRCON_SOURCE_DIR "/patches/16-dx7-ze-organ.json", L));

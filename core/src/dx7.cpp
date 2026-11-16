@@ -197,6 +197,43 @@ std::vector<Voice> parseSysex(const std::vector<uint8_t>& b) {
     return out;
 }
 
+void toPacked(const Voice& o, uint8_t* p) {
+    const std::vector<int> u = toUnpacked(o);
+    for (int i = 0; i < 128; ++i) p[i] = 0;
+    for (int i = 0; i < 6; ++i) {
+        uint8_t* b = p + i * 17;
+        const int* d = &u[(size_t)i * 21];
+        for (int k = 0; k < 4; ++k) { b[k] = uint8_t(d[k]); b[4 + k] = uint8_t(d[4 + k]); }
+        b[8] = uint8_t(d[8]); b[9] = uint8_t(d[9]); b[10] = uint8_t(d[10]);
+        b[11] = uint8_t(d[11] | (d[12] << 2));
+        b[12] = uint8_t(d[13] | (d[20] << 3));
+        b[13] = uint8_t(d[14] | (d[15] << 2));
+        b[14] = uint8_t(d[16]);
+        b[15] = uint8_t(d[17] | (d[18] << 1));
+        b[16] = uint8_t(d[19]);
+    }
+    for (int k = 0; k < 8; ++k) p[102 + k] = uint8_t(u[126 + (size_t)k]);
+    p[110] = uint8_t(u[134]);
+    p[111] = uint8_t(u[135] | (u[136] << 3));
+    for (int k = 0; k < 4; ++k) p[112 + k] = uint8_t(u[137 + (size_t)k]);
+    p[116] = uint8_t(u[141] | (u[142] << 1) | (u[143] << 4));
+    p[117] = uint8_t(u[144]);
+    for (int k = 0; k < 10; ++k) p[118 + k] = uint8_t(u[145 + (size_t)k] & 127);
+}
+
+std::vector<uint8_t> toSysex(const std::vector<Voice>& voices) {
+    std::vector<uint8_t> out = {0xF0, 0x43, 0x00, 0x09, 0x20, 0x00};
+    int sum = 0;
+    for (int i = 0; i < 32; ++i) {
+        uint8_t blk[128];
+        toPacked((size_t)i < voices.size() ? voices[(size_t)i] : Voice(), blk);
+        for (int k = 0; k < 128; ++k) { out.push_back(blk[k]); sum += blk[k]; }
+    }
+    out.push_back(uint8_t((128 - (sum & 127)) & 127));
+    out.push_back(0xF7);
+    return out;
+}
+
 std::string patchJson(const Voice& v, int polyphony) {
     using nlohmann::json;
     std::string name = v.name;

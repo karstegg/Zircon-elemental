@@ -35,6 +35,10 @@ public:
 
     int activeVoices() const;
     const Program& program() const { return prog_; }
+    // Live DX7 voice editing (caller serialises against process()).
+    int numDx7() const { return (int)prog_.dx7s.size(); }
+    const dx7::Voice& dx7Voice(int slot) const { return prog_.dx7s[(size_t)slot]; }
+    void setDx7Voice(int slot, const dx7::Voice& v) { if (slot >= 0 && slot < numDx7()) prog_.dx7s[(size_t)slot] = v; }
 
 private:
     struct Voice { int note = -1; bool gate = false; bool active = false; uint64_t age = 0; float vel = 0; bool sus = false; bool retrig = false; };
