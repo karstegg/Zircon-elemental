@@ -234,6 +234,20 @@ std::vector<uint8_t> toSysex(const std::vector<Voice>& voices) {
     return out;
 }
 
+std::vector<Voice> cartFromPatchJson(const std::string& text) {
+    std::vector<Voice> out;
+    try {
+        auto j = nlohmann::json::parse(text);
+        if (!j.contains("cart") || !j["cart"].is_array()) return out;
+        for (auto& c : j["cart"]) {
+            std::vector<int> vals = c.get<std::vector<int>>();
+            Voice v;
+            if (fromUnpacked(vals, v)) out.push_back(v);
+        }
+    } catch (...) {}
+    return out;
+}
+
 std::string patchJson(const Voice& v, int polyphony) {
     using nlohmann::json;
     std::string name = v.name;

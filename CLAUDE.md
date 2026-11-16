@@ -27,7 +27,7 @@ missing audio-in/multi-out/MIDI clock, host automation quirks.
 - `core/` engine (C++20): `ops` catalogue → `compiler` (flatten macros, topo-sort, z1 breaks loops, summed inputs) → `engine` (per-sample, loops over 16 voice lanes)
 - `library/macros/` primitive-built macros (Phasor, Saw, SineOsc, OnePoleLP ZDF, RamanMode, ZirconLattice, AlphaStrike)
 - `patches/` 01–05 demos, 06–08 Zircon Lattice presets (`tools/gen_zircon.py`), 09–10 showcase synths (`tools/gen_showcase.py`); edit the generators, not the JSON
-- `core/src/dx7.cpp` native 6-op DX7-style voice (`dx7` module; `.syx` import via `dx7::parseSysex`; factory voices 11-16 from `tools/gen_dx7.py`; EG/level curves are approximations, tune by ear)
+- `core/src/dx7.cpp` native 6-op DX7-style voice (`dx7` module; `.syx` import via `dx7::parseSysex`; one `DX7` instrument (`patches/11-dx7.json`, cartridge in its `cart` key) from `tools/gen_dx7.py`; EG/level curves are approximations, tune by ear)
 - `cli/` `zircon render|info|modules`; `tests/` core tests (all must pass); `plugin/` JUCE VST3 + Standalone (factory patches = host programs, auto knob panel, 16 host param slots)
 - `docs/ZIRCON.md` crystal-physics voice (Raman modes, metamict, birefringence, dispersion, alpha decay)
 

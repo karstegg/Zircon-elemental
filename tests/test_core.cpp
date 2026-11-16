@@ -4,7 +4,9 @@
 #include "zircon/dx7.hpp"
 #include <cmath>
 #include <cstdio>
+#include <fstream>
 #include <functional>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -18,6 +20,13 @@ static MacroLibrary lib() { MacroLibrary l; l.loadDirectory(ZIRCON_SOURCE_DIR "/
 static std::vector<float> render(Engine& e, int n) {
     std::vector<float> L(n), R(n); e.process(L.data(), R.data(), n); return L;
 }
+
+static std::vector<zircon::dx7::Voice> factoryCart() {
+    std::ifstream f(ZIRCON_SOURCE_DIR "/patches/11-dx7.json");
+    std::stringstream ss; ss << f.rdbuf();
+    return zircon::dx7::cartFromPatchJson(ss.str());
+}
+static zircon::dx7::Voice factoryVoice(int i) { return factoryCart().at((size_t)i); }
 
 static double zeroCrossFreq(const std::vector<float>& x, int start, double sr) {
     int first = -1, last = -1, count = 0;
@@ -83,6 +92,14 @@ int main() {
         }
     });
 
+    test("dx7: instrument patch loads and carries the factory cartridge", [&] {
+        Engine e(compilePatchFile(ZIRCON_SOURCE_DIR "/patches/11-dx7.json", L));
+        CHECK(e.numDx7() == 1 && e.numParams() == 4);
+        CHECK(factoryCart().size() == 6);
+        e.setDx7Voice(0, factoryVoice(3));
+        CHECK(e.dx7Voice(0).name.substr(0, 8) == "ZE BRASS");
+    });
+
     test("dx7: voice param round trip + packed SysEx parse", [&] {
         dx7::Voice v;
         v.algo = 17; v.fb = 5; v.trnsp = 30; v.lfw = 4; v.name = "ROUNDTRIP";
@@ -128,7 +145,7 @@ int main() {
 
     test("dx7: organ plays the right pitch; e-piano decays while held, releases, frees voice", [&] {
         {
-            Engine e(compilePatchFile(ZIRCON_SOURCE_DIR "/patches/16-dx7-ze-organ.json", L));
+            Engine e(compilePatch(dx7::patchJson(factoryVoice(5)), L));
             e.prepare(48000); e.noteOn(60, 1.f);
             render(e, 4800);
             auto x = render(e, 24000);
@@ -140,7 +157,7 @@ int main() {
             double f = 48000.0 / best;
             CHECK(std::fabs(f - 261.63) < 4.0);
         }
-        Engine e(compilePatchFile(ZIRCON_SOURCE_DIR "/patches/11-dx7-ze-epiano.json", L));
+        Engine e(compilePatch(dx7::patchJson(factoryVoice(0)), L));
         e.prepare(48000); e.noteOn(60, 1.f);
         auto rms = [&](int n) { auto x = render(e, n); double r = 0; for (float v : x) r += v * v; return std::sqrt(r / n); };
         double early = rms(4800);
@@ -153,9 +170,9 @@ int main() {
     });
 
     test("dx7: all factory voices finite, bounded, silent after release", [&] {
-        const char* names[] = {"11-dx7-ze-epiano", "12-dx7-ze-bells", "13-dx7-ze-bass", "14-dx7-ze-brass", "15-dx7-ze-marimba", "16-dx7-ze-organ"};
-        for (auto n : names) {
-            Engine e(compilePatchFile((std::string(ZIRCON_SOURCE_DIR) + "/patches/" + n + ".json").c_str(), L));
+        CHECK(factoryCart().size() == 6);
+        for (int n = 0; n < 6; ++n) {
+            Engine e(compilePatch(dx7::patchJson(factoryVoice(n)), L));
             e.prepare(48000); e.noteOn(48, 0.9f); e.noteOn(55, 0.9f); e.noteOn(64, 0.9f);
             auto x = render(e, 48000);
             float pk = 0; for (float v : x) { CHECK(std::isfinite(v)); pk = std::max(pk, std::fabs(v)); }

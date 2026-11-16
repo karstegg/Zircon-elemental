@@ -57,6 +57,8 @@ std::vector<int> toUnpacked(const Voice&);                    // 155 values
 // Parses a DX7 SysEx dump: 32-voice bulk (4104 bytes) or a single-voice dump. Empty on failure.
 std::vector<Voice> parseSysex(const std::vector<uint8_t>& bytes);
 // 32-voice bulk dump (4104 bytes) of up to 32 voices (padded with INIT VOICE).
+// Voices stored in a patch's top-level "cart" array (155 unpacked values each). Empty if absent.
+std::vector<Voice> cartFromPatchJson(const std::string& patchText);
 std::vector<uint8_t> toSysex(const std::vector<Voice>& voices);
 void toPacked(const Voice&, uint8_t* p128);
 // Complete Zircon patch (JSON text) that plays this voice, with Level/Bright/EG Speed/Vibrato knobs.

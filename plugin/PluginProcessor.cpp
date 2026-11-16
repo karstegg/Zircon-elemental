@@ -28,6 +28,7 @@ ZirconProcessor::ZirconProcessor()
         juce::String file = BinaryData::getNamedResourceOriginalFilename(BinaryData::namedResourceList[i]);
         auto parsed = juce::JSON::parse(text);
         bool isPatch = parsed.hasProperty("out");
+        if (isPatch && factoryCart_.empty()) factoryCart_ = zircon::dx7::cartFromPatchJson(text.toStdString());
         if (isPatch) factory_.add({parsed.getProperty("name", file).toString(), text});
         else lib_.addMacro(parsed.getProperty("name", file.upToFirstOccurrenceOf(".", false, false)).toString().toStdString(),
                            text.toStdString());
@@ -77,7 +78,11 @@ juce::String ZirconProcessor::loadPatchText(const juce::String& json) {
     {
         const juce::SpinLock::ScopedLockType sl(lock_);
         dx7Active_ = engine_ && engine_->numDx7() > 0;
-        if (dx7Active_ && cart_.empty()) { cart_.assign(1, engine_->dx7Voice(0)); cartIndex_ = 0; }
+        if (dx7Active_ && cart_.empty()) { cart_ = factoryCart_; cartIndex_ = 0; }
+        if (dx7Active_) {
+            padCart();
+            if (pendingDx7_.isEmpty()) engine_->setDx7Voice(0, cart_[(size_t)cartIndex_]);   // instrument keeps its current cartridge voice
+        }
         if (dx7Active_ && pendingDx7_.isNotEmpty()) {
             std::vector<int> vals;
             for (auto& t : juce::StringArray::fromTokens(pendingDx7_, " ", "")) vals.push_back(t.getIntValue());
@@ -98,11 +103,12 @@ juce::String ZirconProcessor::loadSysex(const juce::File& f) {
     auto voices = zircon::dx7::parseSysex(bytes);
     if (voices.empty()) return lastError_ = "not a DX7 SysEx dump (expected a 32-voice bulk or single-voice .syx)";
     cart_ = voices;
+    padCart();
     cartIndex_ = 0;
     if (!dx7Active_) {
         // switch to the DX7 instrument first
         for (int i = 0; i < factory_.size(); ++i)
-            if (factory_[i].name.startsWith("DX7:")) { currentProgram_ = i; loadPatchText(factory_[i].json); break; }
+            if (factory_[i].name.startsWith("DX7")) { currentProgram_ = i; loadPatchText(factory_[i].json); break; }
     }
     lastError_ = {};
     setDx7Voice(cart_[0]);
@@ -114,6 +120,12 @@ juce::String ZirconProcessor::saveSysex(const juce::File& f) {
     if (cart_.empty()) return "no cartridge";
     auto bytes = zircon::dx7::toSysex(cart_);
     return f.replaceWithData(bytes.data(), bytes.size()) ? juce::String() : juce::String("could not write file");
+}
+
+void ZirconProcessor::padCart() {
+    if (cart_.size() > 32) cart_.resize(32);
+    while (cart_.size() < 32) { zircon::dx7::Voice v; v.op[0].ol = 99; for (int i = 1; i < 6; ++i) v.op[i].ol = 0; cart_.push_back(v); }
+    cartIndex_ = juce::jlimit(0, (int)cart_.size() - 1, cartIndex_);
 }
 
 zircon::dx7::Voice ZirconProcessor::dx7Voice() {
@@ -132,7 +144,6 @@ juce::String ZirconProcessor::cartName(int i) const {
 }
 
 void ZirconProcessor::storeToCart() {
-    if (cart_.empty()) cart_.assign(1, zircon::dx7::Voice());
     cart_[(size_t)juce::jlimit(0, (int)cart_.size() - 1, cartIndex_)] = dx7Voice();
 }
 

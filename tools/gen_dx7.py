@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the original factory DX7-style voices (patches 11-16).
+"""Generate the DX7 instrument patch (patches/11-dx7.json) with the original factory cartridge.
 
 These are our own voices written for the `dx7` module (6-operator FM, 32 algorithms,
 standard DX7 parameter set).  They are NOT Yamaha factory voices.  To use real
@@ -89,21 +89,22 @@ def param(id, name, lo, hi, default, curve=None):
     return {"id": id, "type": "param", "params": p}
 
 
-for i, (name, vals) in enumerate(VOICES, start=11):
-    patch = {
-        "name": "DX7: " + name.strip(),
-        "doc": "Original DX7-style voice for the 'dx7' module (6-op FM, 32 algorithms). Knobs: Level, Bright "
-               "(modulation depth), EG Speed, Vibrato. Mod wheel adds vibrato.",
-        "voices": 8,
-        "modules": [
-            {"id": "dx", "type": "dx7", "params": {"voice": vals}},
-            param("lvl", "Level", 0, 1, 0.9), param("brt", "Bright", 0, 2, 1),
-            param("egs", "EG Speed", 0.25, 4, 1, "exp"), param("vib", "Vibrato", 0, 1, 0),
-        ],
-        "wires": [["lvl", "dx.level"], ["brt", "dx.bright"], ["egs", "dx.rate"], ["vib", "dx.pmd"]],
-        "out": "dx.out",
-    }
-    slug = name.strip().lower().replace(" ", "-").replace(".", "")
-    path = ROOT / "patches" / f"{i}-dx7-{slug}.json"
-    path.write_text(json.dumps(patch, indent=None, separators=(", ", ": ")) + "\n", encoding="utf-8")
-    print("wrote", path.relative_to(ROOT))
+first_name, first_vals = VOICES[0]
+patch = {
+    "name": "DX7",
+    "doc": "6-operator, 32-algorithm FM instrument (the 'dx7' module). The factory cartridge (original voices, not "
+           "Yamaha's) lives inside the instrument; load .syx cartridges from the panel. Macro knobs: Level, Bright "
+           "(modulation depth), EG Speed, Vibrato. Mod wheel adds vibrato.",
+    "voices": 8,
+    "modules": [
+        {"id": "dx", "type": "dx7", "params": {"voice": first_vals}},
+        param("lvl", "Level", 0, 1, 0.9), param("brt", "Bright", 0, 2, 1),
+        param("egs", "EG Speed", 0.25, 4, 1, "exp"), param("vib", "Vibrato", 0, 1, 0),
+    ],
+    "wires": [["lvl", "dx.level"], ["brt", "dx.bright"], ["egs", "dx.rate"], ["vib", "dx.pmd"]],
+    "out": "dx.out",
+    "cart": [vals for _, vals in VOICES],
+}
+path = ROOT / "patches" / "11-dx7.json"
+path.write_text(json.dumps(patch, indent=None, separators=(", ", ": ")) + chr(10), encoding="utf-8")
+print("wrote", path.relative_to(ROOT))

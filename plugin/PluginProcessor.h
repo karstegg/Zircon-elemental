@@ -73,7 +73,8 @@ public:
 
 private:
     struct Factory { juce::String name, json; };
-    std::vector<zircon::dx7::Voice> cart_;
+    std::vector<zircon::dx7::Voice> cart_, factoryCart_;
+    void padCart();
     int cartIndex_ = 0;
     std::atomic<bool> dx7Active_{false};
     void applyDx7ToEngine(const zircon::dx7::Voice&);
