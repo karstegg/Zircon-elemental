@@ -161,10 +161,12 @@ void Engine::runSample() {
             const float* tm = &state_[(size_t)I.state * kMaxLanes];
             LANES {
                 DelayBuf& d = delays_[(size_t)I.slot * kMaxLanes + v];
-                float t = std::clamp(tm[v] * sr, 1.f, (float)(d.size - 3));
+                float t = tm[v] * sr;
+                if (!std::isfinite(t)) t = 1.f;   // NaN/Inf time: clamp would pass NaN through and (int)rp would be UB
+                t = std::clamp(t, 1.f, (float)(d.size - 3));
                 float rp = (float)d.pos - t;
                 while (rp < 0.f) rp += (float)d.size;
-                int i0 = (int)rp; float fr = rp - (float)i0; int i1 = (i0 + 1) % d.size;
+                int i0 = std::clamp((int)rp, 0, d.size - 1); float fr = rp - (float)i0; int i1 = (i0 + 1) % d.size;
                 o[v] = d.buf[i0] + (d.buf[i1] - d.buf[i0]) * fr;
             }
         } break;
@@ -246,6 +248,11 @@ void Engine::process(float* left, float* right, int n) {
         float sl = 0.f, sr = 0.f;
         for (int v = 0; v < lanes_; ++v) {
             if (!voices_[v].active) continue;
+            if (!std::isfinite(l[v]) || !std::isfinite(r[v])) {   // poisoned lane: drop just this voice, wipe its state
+                clearLane(v);                                     // safe here: runSample() for this sample is finished
+                voices_[v].active = false; voices_[v].gate = false; voices_[v].sus = false;
+                continue;
+            }
             sl += l[v]; sr += r[v];
         }
         if (!std::isfinite(sl)) sl = 0.f;

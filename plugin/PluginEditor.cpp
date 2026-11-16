@@ -61,7 +61,6 @@ ZirconEditor::ZirconEditor(ZirconProcessor& p) : AudioProcessorEditor(p), proc_(
     addAndMakeVisible(error_);
 
     addMouseListener(this, true);   // right-click anywhere (incl. over knobs) opens the context menu
-    proc_.onProgramListChanged = [this] { refreshPresets(); };
     proc_.onPatchChanged = [this] {
         rebuildKnobs();
         updateMode();
@@ -81,7 +80,6 @@ ZirconEditor::ZirconEditor(ZirconProcessor& p) : AudioProcessorEditor(p), proc_(
 ZirconEditor::~ZirconEditor() {
     dxView_.setViewedComponent(nullptr, false);
     dx_.reset();
-    proc_.onProgramListChanged = nullptr;
     removeMouseListener(this);
     structure_.reset();
     proc_.onPatchChanged = nullptr;

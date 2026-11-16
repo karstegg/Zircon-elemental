@@ -43,12 +43,11 @@ public:
     // DX7 instrument: live voice + cartridge (32 slots)
     bool dx7Active() const { return dx7Active_.load(); }
     zircon::dx7::Voice dx7Voice();                        // copy of the live voice
-    void setDx7Voice(const zircon::dx7::Voice&);          // live edit (audio thread safe)
-    int cartSize() const { return (int)cart_.size(); }
+    void setDx7Voice(const zircon::dx7::Voice&);          // live edit: applied to the engine and stored in the current cartridge slot
+    int cartSize() const;
     juce::String cartName(int i) const;
-    int cartIndex() const { return cartIndex_; }
-    void selectCartVoice(int i);                          // store pending edit, then switch
-    void storeToCart();                                   // write the live voice into its slot
+    int cartIndex() const;
+    void selectCartVoice(int i);                          // switch to slot i (edits are already stored in their slot)
     void initDx7Voice();
     void restoreFactoryCart();
     std::function<void()> onCartChanged;
@@ -60,8 +59,8 @@ public:
     juce::String macroText(const juce::String& n) const {
         return lib_.has(n.toStdString()) ? juce::String(lib_.get(n.toStdString())) : juce::String();
     }
-    juce::String patchText() const { return patchText_; }
-    juce::String lastError() const { return lastError_; }
+    juce::String patchText() const { const juce::ScopedLock sc(stateLock_); return patchText_; }
+    juce::String lastError() const { const juce::ScopedLock sc(stateLock_); return lastError_; }
     int mappedParamCount() const;
     juce::String mappedParamName(int slot) const;
     juce::RangedAudioParameter* hostParam(int slot) { return hostParams_[slot]; }
@@ -70,21 +69,25 @@ public:
     float peakLevel() const { return peak_.load(); }
 
     std::function<void()> onPatchChanged;       // editor hook (message thread)
-    std::function<void()> onProgramListChanged; // program list replaced (e.g. .syx cartridge loaded)
 
 private:
     struct Factory { juce::String name, json; };
     std::vector<zircon::dx7::Voice> cart_, factoryCart_;
-    void padCart();
+    void padCart();                                // caller holds stateLock_
     int cartIndex_ = 0;
     std::atomic<bool> dx7Active_{false};
-    void applyDx7ToEngine(const zircon::dx7::Voice&);
     juce::Array<Factory> factory_;
     int currentProgram_ = 0;
 
     zircon::MacroLibrary lib_;
     std::shared_ptr<zircon::Engine> engine_;      // swapped under lock_
-    juce::SpinLock lock_;
+    std::shared_ptr<zircon::Engine> engineCopy() const;   // snapshot for UI-thread readers
+    mutable juce::SpinLock lock_;                 // audio thread: engine_ (try-lock in processBlock)
+    // Guards cart_, cartIndex_, patchText_, lastError_, pendingDx7_ (message + host threads).
+    // Lock order: stateLock_ first, then lock_. Never taken on the audio thread.
+    mutable juce::CriticalSection stateLock_;
+    juce::MidiBuffer pendingMidi_;                // MIDI from blocks that missed the try-lock, replayed next block (audio thread only)
+    int pendingMidiCount_ = 0;
     juce::String patchText_, lastError_;
     juce::String pendingDx7_;   // restored voice text, applied after the patch compiles
     double sampleRate_ = 48000.0;
@@ -99,4 +102,6 @@ private:
     std::array<float, kHostParams> lastSent_{};
     std::atomic<int> voicesActive_{0};
     std::atomic<float> peak_{0.f};
+
+    JUCE_DECLARE_WEAK_REFERENCEABLE(ZirconProcessor)
 };

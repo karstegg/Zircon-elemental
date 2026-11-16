@@ -2,6 +2,16 @@
 #include "PluginEditor.h"
 #include "BinaryData.h"
 
+// Gentle output limiter: identity up to 0.9, then a tanh knee that approaches +-1.
+static inline float softClip(float x) {
+    if (!std::isfinite(x)) return 0.f;
+    const float a = std::fabs(x);
+    if (a <= 0.9f) return x;
+    return std::copysign(0.9f + 0.1f * std::tanh((a - 0.9f) * 10.f), x);
+}
+
+static constexpr int kMaxPendingMidi = 1024;   // events kept when the audio thread misses the engine lock
+
 ZirconProcessor::ZirconProcessor()
     : AudioProcessor(BusesProperties().withOutput("Output", juce::AudioChannelSet::stereo(), true)) {
     for (int i = 0; i < kHostParams; ++i) {
@@ -33,6 +43,7 @@ ZirconProcessor::ZirconProcessor()
         else lib_.addMacro(parsed.getProperty("name", file.upToFirstOccurrenceOf(".", false, false)).toString().toStdString(),
                            text.toStdString());
     }
+    pendingMidi_.ensureSize(kMaxPendingMidi * 16);   // ~9 bytes per 3-byte event: never grows on the audio thread
     std::sort(factory_.begin(), factory_.end(), [](auto& a, auto& b) { return a.name < b.name; });
     if (!factory_.isEmpty()) loadPatchText(factory_[0].json);
 }
@@ -47,6 +58,8 @@ void ZirconProcessor::prepareToPlay(double sr, int) {
     reverb_.reset();
     for (auto& b : dlBuf_) b.assign((size_t)(sr * 1.2) + 8, 0.f);
     dlPos_ = 0;
+    pendingMidi_.clear();
+    pendingMidiCount_ = 0;
     const juce::SpinLock::ScopedLockType sl(lock_);
     if (engine_) engine_->prepare(sr);
 }
@@ -58,6 +71,8 @@ juce::String ZirconProcessor::loadPatchText(const juce::String& json) {
         fresh = std::make_shared<zircon::Engine>(std::move(prog));
         fresh->prepare(sampleRate_);
     } catch (const std::exception& e) {
+        const juce::ScopedLock sc(stateLock_);
+        pendingDx7_ = {};   // a restored voice must not leak into the next successful load
         lastError_ = e.what();
         return lastError_;
     }
@@ -70,12 +85,13 @@ juce::String ZirconProcessor::loadPatchText(const juce::String& json) {
         lastSent_[i] = -1.f;
     }
     {
-        const juce::SpinLock::ScopedLockType sl(lock_);
-        std::swap(engine_, fresh);   // old engine destroyed outside the lock, below
-    }
-    patchText_ = json;
-    lastError_ = {};
-    {
+        const juce::ScopedLock sc(stateLock_);
+        {
+            const juce::SpinLock::ScopedLockType sl(lock_);
+            std::swap(engine_, fresh);   // old engine destroyed outside the lock, below
+        }
+        patchText_ = json;
+        lastError_ = {};
         const juce::SpinLock::ScopedLockType sl(lock_);
         dx7Active_ = engine_ && engine_->numDx7() > 0;
         if (dx7Active_ && cart_.empty()) { cart_ = factoryCart_; cartIndex_ = 0; }
@@ -87,16 +103,20 @@ juce::String ZirconProcessor::loadPatchText(const juce::String& json) {
             std::vector<int> vals;
             for (auto& t : juce::StringArray::fromTokens(pendingDx7_, " ", "")) vals.push_back(t.getIntValue());
             zircon::dx7::Voice v;
-            if (zircon::dx7::fromUnpacked(vals, v)) engine_->setDx7Voice(0, v);
+            if (zircon::dx7::fromUnpacked(vals, v)) { engine_->setDx7Voice(0, v); cart_[(size_t)cartIndex_] = v; }   // live voice lives in its slot
         }
         pendingDx7_ = {};
     }
     updateHostDisplay(ChangeDetails().withProgramChanged(true).withParameterInfoChanged(true));
-    if (onPatchChanged) juce::MessageManager::callAsync([this] { if (onPatchChanged) onPatchChanged(); });
+    if (onPatchChanged)
+        juce::MessageManager::callAsync([weak = juce::WeakReference<ZirconProcessor>(this)] {
+            if (auto* self = weak.get()) if (self->onPatchChanged) self->onPatchChanged();
+        });
     return {};
 }
 
 juce::String ZirconProcessor::loadSysex(const juce::File& f) {
+    const juce::ScopedLock sc(stateLock_);
     juce::MemoryBlock mb;
     if (!f.loadFileAsData(mb)) return lastError_ = "could not read file";
     std::vector<uint8_t> bytes((const uint8_t*)mb.getData(), (const uint8_t*)mb.getData() + mb.getSize());
@@ -111,14 +131,21 @@ juce::String ZirconProcessor::loadSysex(const juce::File& f) {
             if (factory_[i].name.startsWith("DX7")) { currentProgram_ = i; loadPatchText(factory_[i].json); break; }
     }
     lastError_ = {};
-    setDx7Voice(cart_[0]);
-    if (onCartChanged) juce::MessageManager::callAsync([this] { if (onCartChanged) onCartChanged(); });
+    setDx7Voice(zircon::dx7::Voice(cart_[0]));
+    if (onCartChanged)
+        juce::MessageManager::callAsync([weak = juce::WeakReference<ZirconProcessor>(this)] {
+            if (auto* self = weak.get()) if (self->onCartChanged) self->onCartChanged();
+        });
     return {};
 }
 
 juce::String ZirconProcessor::saveSysex(const juce::File& f) {
-    if (cart_.empty()) return "no cartridge";
-    auto bytes = zircon::dx7::toSysex(cart_);
+    std::vector<uint8_t> bytes;
+    {
+        const juce::ScopedLock sc(stateLock_);
+        if (cart_.empty()) return "no cartridge";
+        bytes = zircon::dx7::toSysex(cart_);
+    }
     return f.replaceWithData(bytes.data(), bytes.size()) ? juce::String() : juce::String("could not write file");
 }
 
@@ -134,31 +161,42 @@ zircon::dx7::Voice ZirconProcessor::dx7Voice() {
 }
 
 void ZirconProcessor::setDx7Voice(const zircon::dx7::Voice& v) {
+    const juce::ScopedLock sc(stateLock_);
+    if (!cart_.empty()) cart_[(size_t)juce::jlimit(0, (int)cart_.size() - 1, cartIndex_)] = v;   // every edit lands in the current slot
     const juce::SpinLock::ScopedLockType sl(lock_);
     if (engine_) engine_->setDx7Voice(0, v);
 }
 
+int ZirconProcessor::cartSize() const {
+    const juce::ScopedLock sc(stateLock_);
+    return (int)cart_.size();
+}
+
+int ZirconProcessor::cartIndex() const {
+    const juce::ScopedLock sc(stateLock_);
+    return cartIndex_;
+}
+
 juce::String ZirconProcessor::cartName(int i) const {
+    const juce::ScopedLock sc(stateLock_);
     if (i < 0 || i >= (int)cart_.size()) return {};
     return juce::String(i + 1).paddedLeft('0', 2) + "  " + juce::String(cart_[(size_t)i].name).trimEnd();
 }
 
-void ZirconProcessor::storeToCart() {
-    cart_[(size_t)juce::jlimit(0, (int)cart_.size() - 1, cartIndex_)] = dx7Voice();
-}
-
 void ZirconProcessor::selectCartVoice(int i) {
+    const juce::ScopedLock sc(stateLock_);
     if (i < 0 || i >= (int)cart_.size()) return;
     cartIndex_ = i;
-    setDx7Voice(cart_[(size_t)i]);
+    setDx7Voice(zircon::dx7::Voice(cart_[(size_t)i]));
 }
 
 void ZirconProcessor::restoreFactoryCart() {
+    const juce::ScopedLock sc(stateLock_);
     if (factoryCart_.empty()) return;
     cart_ = factoryCart_;
     padCart();
     cartIndex_ = 0;
-    setDx7Voice(cart_[0]);
+    setDx7Voice(zircon::dx7::Voice(cart_[0]));
 }
 
 void ZirconProcessor::initDx7Voice() {
@@ -183,21 +221,38 @@ const juce::String ZirconProcessor::getProgramName(int index) {
     return juce::isPositiveAndBelow(index, factory_.size()) ? factory_[index].name : juce::String();
 }
 
+std::shared_ptr<zircon::Engine> ZirconProcessor::engineCopy() const {
+    const juce::SpinLock::ScopedLockType sl(lock_);
+    return engine_;
+}
 juce::String ZirconProcessor::patchName() const {
-    return engine_ ? juce::String(engine_->program().name) : "(none)";
+    auto e = engineCopy();
+    return e ? juce::String(e->program().name) : "(none)";
 }
 int ZirconProcessor::mappedParamCount() const {
-    return engine_ ? std::min(kHostParams, engine_->numParams()) : 0;
+    auto e = engineCopy();
+    return e ? std::min(kHostParams, e->numParams()) : 0;
 }
 juce::String ZirconProcessor::mappedParamName(int slot) const {
-    return engine_ && slot < engine_->numParams() ? juce::String(engine_->paramInfo(slot).name) : juce::String();
+    auto e = engineCopy();
+    return e && slot >= 0 && slot < e->numParams() ? juce::String(e->paramInfo(slot).name) : juce::String();
 }
 
 void ZirconProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi) {
     juce::ScopedNoDenormals noDenormals;
     buffer.clear();
     const juce::SpinLock::ScopedTryLockType sl(lock_);
-    if (!sl.isLocked() || !engine_) return;
+    if (!sl.isLocked()) {
+        // UI holds the engine: keep this block's note/controller events and replay them at the start of the next block
+        for (const auto meta : midi) {
+            if (pendingMidiCount_ >= kMaxPendingMidi) break;
+            if (meta.numBytes > 3) continue;   // skip SysEx etc. (would allocate)
+            pendingMidi_.addEvent(meta.data, meta.numBytes, 0);
+            ++pendingMidiCount_;
+        }
+        return;
+    }
+    if (!engine_) return;
     auto& eng = *engine_;
 
     for (int i = 0; i < std::min(kHostParams, eng.numParams()); ++i) {
@@ -208,10 +263,7 @@ void ZirconProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
     float* L = buffer.getWritePointer(0);
     float* R = buffer.getWritePointer(1);
     int pos = 0, n = buffer.getNumSamples();
-    for (const auto meta : midi) {
-        int t = juce::jlimit(0, n, meta.samplePosition);
-        if (t > pos) { eng.process(L + pos, R + pos, t - pos); pos = t; }
-        auto m = meta.getMessage();
+    auto handle = [&eng](const juce::MidiMessage& m) {
         if (m.isNoteOn()) eng.noteOn(m.getNoteNumber(), m.getFloatVelocity());
         else if (m.isNoteOff()) eng.noteOff(m.getNoteNumber());
         else if (m.isAllNotesOff() || m.isAllSoundOff()) eng.allNotesOff();
@@ -219,9 +271,18 @@ void ZirconProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
         else if (m.isSustainPedalOff()) eng.setSustain(false);
         else if (m.isControllerOfType(1)) eng.setModWheel(m.getControllerValue() / 127.f);
         else if (m.isPitchWheel()) eng.setPitchBend((m.getPitchWheelValue() - 8192) / 8192.f * 2.f);
+    };
+    for (const auto meta : pendingMidi_) handle(meta.getMessage());   // events from a previously skipped block, at sample 0
+    pendingMidi_.clear();
+    pendingMidiCount_ = 0;
+    for (const auto meta : midi) {
+        int t = juce::jlimit(0, n, meta.samplePosition);
+        if (t > pos) { eng.process(L + pos, R + pos, t - pos); pos = t; }
+        handle(meta.getMessage());
     }
     if (pos < n) eng.process(L + pos, R + pos, n - pos);
     applyFx(L, R, n);
+    for (int i = 0; i < n; ++i) { L[i] = softClip(L[i]); R[i] = softClip(R[i]); }
     voicesActive_ = eng.activeVoices();
     peak_ = std::max(buffer.getMagnitude(0, 0, n), peak_.load() * 0.9f);
 }
@@ -261,6 +322,7 @@ void ZirconProcessor::applyFx(float* L, float* R, int n) {
 }
 
 void ZirconProcessor::getStateInformation(juce::MemoryBlock& dest) {
+    const juce::ScopedLock sc(stateLock_);
     juce::ValueTree st("ZirconState");
     st.setProperty("patch", patchText_, nullptr);
     st.setProperty("program", currentProgram_, nullptr);
@@ -282,17 +344,20 @@ void ZirconProcessor::setStateInformation(const void* data, int size) {
     auto st = juce::ValueTree::readFromData(data, (size_t)size);
     if (!st.isValid()) return;
     currentProgram_ = juce::jlimit(0, std::max(0, factory_.size() - 1), (int)st.getProperty("program", 0));
-    // states saved before the single-instrument cartridge (no "cartv") may hold a stale one-voice cart: use the factory cart
-    if (st.hasProperty("cart") && (int)st.getProperty("cartv", 0) >= 2) {
-        juce::MemoryOutputStream mo;
-        if (juce::Base64::convertFromBase64(mo, st.getProperty("cart").toString())) {
-            auto* d = (const uint8_t*)mo.getData();
-            auto vs = zircon::dx7::parseSysex(std::vector<uint8_t>(d, d + mo.getDataSize()));
-            if (!vs.empty()) cart_ = vs;
+    {
+        const juce::ScopedLock sc(stateLock_);   // released before loadPatchText: it notifies the host
+        // states saved before the single-instrument cartridge (no "cartv") may hold a stale one-voice cart: use the factory cart
+        if (st.hasProperty("cart") && (int)st.getProperty("cartv", 0) >= 2) {
+            juce::MemoryOutputStream mo;
+            if (juce::Base64::convertFromBase64(mo, st.getProperty("cart").toString())) {
+                auto* d = (const uint8_t*)mo.getData();
+                auto vs = zircon::dx7::parseSysex(std::vector<uint8_t>(d, d + mo.getDataSize()));
+                if (!vs.empty()) cart_ = vs;
+            }
+            cartIndex_ = juce::jlimit(0, std::max(0, (int)cart_.size() - 1), (int)st.getProperty("cartidx", 0));
         }
-        cartIndex_ = juce::jlimit(0, std::max(0, (int)cart_.size() - 1), (int)st.getProperty("cartidx", 0));
+        pendingDx7_ = st.getProperty("dx7voice").toString();
     }
-    pendingDx7_ = st.getProperty("dx7voice").toString();
     loadPatchText(st.getProperty("patch").toString());
     for (int i = 0; i < kFxParams; ++i)
         if (st.hasProperty("fx" + juce::String(i + 1)))

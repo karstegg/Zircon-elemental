@@ -370,6 +370,76 @@ int main() {
         CHECK(errs == 2);
     });
 
+    test("malformed sysex is rejected without crashing", [&] {
+        CHECK(dx7::parseSysex({}).empty());
+        auto good = dx7::toSysex(factoryCart());
+        CHECK(good.size() == 4104 && dx7::parseSysex(good).size() == 32);
+        auto trunc = good; trunc.resize(4000);
+        CHECK(dx7::parseSysex(trunc).empty());                 // truncated 32-voice dump
+        trunc.resize(100);
+        CHECK(dx7::parseSysex(trunc).empty());
+        auto badMaker = good; badMaker[1] = 0x42;               // not Yamaha
+        CHECK(dx7::parseSysex(badMaker).empty());
+        auto badSub = good; badSub[3] = 0x7E;                   // unknown format byte
+        CHECK(dx7::parseSysex(badSub).empty());
+        uint32_t x = 12345;
+        auto rnd = [&](size_t n) { std::vector<uint8_t> b(n); for (auto& v : b) { x = x * 1664525u + 1013904223u; v = (uint8_t)(x >> 24); } return b; };
+        CHECK(dx7::parseSysex(rnd(5000)).empty());
+        CHECK(dx7::parseSysex(rnd(7)).empty());
+        CHECK(dx7::parseSysex(rnd(4096)).size() <= 32);         // raw-payload path: must not crash
+        auto single = rnd(163); single[0] = 0xF0; single[1] = 0x43; single[2] = 0x00; single[3] = 0x00;
+        CHECK(dx7::parseSysex(single).size() <= 1);             // single-voice header with garbage body: must not crash
+    });
+
+    test("delay with NaN / Inf time stays in bounds and finite", [&] {
+        // big = 1e30*1e30 = +Inf; nan = Inf-Inf = NaN; both drive a delay time
+        const char* p = R"({"voices":1,"modules":[
+            {"id":"big","type":"mul","in":{"a":1e30,"b":1e30}},
+            {"id":"nan","type":"sub"},
+            {"id":"c","type":"const","params":{"value":0.5}},
+            {"id":"d1","type":"delay","params":{"max":0.01}},
+            {"id":"d2","type":"delay","params":{"max":0.01}},
+            {"id":"s","type":"add"}],
+            "wires":[["big","nan.a"],["big","nan.b"],["c","d1.in"],["c","d2.in"],["big","d1.time"],["nan","d2.time"],["d1","s.a"],["d2","s.b"]],
+            "out":"s.out"})";
+        Engine e(compilePatch(p, L)); e.prepare(48000); e.noteOn(60, 1.f);
+        auto x = render(e, 4800);
+        for (float v : x) CHECK(std::isfinite(v));
+        CHECK(e.activeVoices() == 1);
+    });
+
+    test("a NaN in one voice does not silence the others", [&] {
+        // notes above 60.5 produce Inf * 0 = NaN, lower notes output a steady 0.25
+        const char* p = R"({"voices":4,"modules":[
+            {"id":"p","type":"pitch"},
+            {"id":"g","type":"gt","in":{"b":60.5}},
+            {"id":"m1","type":"mul","in":{"b":1e30}},
+            {"id":"m2","type":"mul","in":{"b":1e30}},
+            {"id":"m3","type":"mul","in":{"b":0}},
+            {"id":"s","type":"add","in":{"b":0.25}}],
+            "wires":[["p","g.a"],["g","m1.a"],["m1","m2.a"],["m2","m3.a"],["m3","s.a"]],"out":"s.out"})";
+        Engine e(compilePatch(p, L)); e.prepare(48000);
+        e.noteOn(48, 1.f); e.noteOn(72, 1.f);
+        auto x = render(e, 256);
+        for (float v : x) CHECK(v == 0.25f);                    // good voice keeps sounding from sample 0
+        CHECK(e.activeVoices() == 1);                           // the poisoned voice was dropped
+        e.noteOn(72, 1.f);                                      // and the lane is reusable without lingering NaN
+        x = render(e, 64);
+        for (float v : x) CHECK(v == 0.25f);
+    });
+
+    test("delay max is clamped to a sane range", [&] {
+        const char* big = R"({"voices":1,"modules":[{"id":"c","type":"const","params":{"value":1}},
+            {"id":"d","type":"delay","params":{"max":1e9}}],"wires":[["c","d.in"]],"out":"d.out"})";
+        auto prog = compilePatch(big, L);
+        CHECK(prog.delays.size() == 1 && prog.delays[0].maxSeconds == 10.f);
+        Engine e(std::move(prog)); e.prepare(48000); e.noteOn(60, 1.f);
+        for (float v : render(e, 480)) CHECK(std::isfinite(v));
+        const char* tiny = R"({"voices":1,"modules":[{"id":"c","type":"const","params":{"value":1}},
+            {"id":"d","type":"delay","params":{"max":-5}}],"wires":[["c","d.in"]],"out":"d.out"})";
+        CHECK(compilePatch(tiny, L).delays[0].maxSeconds == 0.001f);
+    });
+
     printf("\n%s (%d failure%s)\n", failures ? "FAILED" : "ALL PASSED", failures, failures == 1 ? "" : "s");
     return failures ? 1 : 0;
 }

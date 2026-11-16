@@ -18,13 +18,14 @@ as a VST3 plugin. Planned: modern UI and AI-assisted patch design.
 | Graph compiler (macros, feedback detection, summing inputs) | ✅ |
 | Voice-parallel runtime (16 lanes, stealing, param smoothing) | ✅ |
 | 30+ math/logic/state primitives + native ADSR, ZDF SVF, delay | ✅ |
-| Macro library built from primitives (Phasor, Saw, SineOsc, ZDF OnePoleLP) | ✅ |
-| CLI render to WAV, test suite (12 tests) | ✅ |
+| Macro library built from primitives (Phasor, Saw, SineOsc, OnePoleLP, NoteFreq, LadderLP, RamanMode, ZirconLattice, AlphaStrike) | ✅ |
+| CLI render to WAV, test suite (30 tests) | ✅ |
 | Zircon Lattice physical-model voice (3 presets) | ✅ |
-| JUCE plugin: VST3 + Standalone, factory patches as host programs, auto knob panel | ✅ passes pluginval strictness 7 |
-| Node-graph editor, CLAP/AU, `.sm` importer, AI designer | roadmap |
+| JUCE plugin: VST3 + Standalone, factory patches as host programs, auto knob panel | ✅ passed pluginval strictness 7 (last run before the DX7 panel was added) |
+| Structure editor (right-click > Show structure: drag wires, add/delete modules, set constants, live recompile, save JSON) | MVP |
+| GPU node graph, CLAP/AU, `.sm` importer, AI designer | roadmap |
 
-Rendering runs 40–140× realtime per patch with 8 voices on one core, before any SIMD work.
+Measured rendering speed on one core, before any SIMD work: simple patches run about 25–70× realtime, the showcase synths about 13–16×, and Zircon Lattice about 2–3× with 8 voices.
 
 ## Build
 

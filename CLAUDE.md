@@ -40,11 +40,11 @@ ctest --test-dir build -C Release
 The VST3 lands in `build/plugin/ZirconElemental_artefacts/Release/VST3/`. Copy it to `C:\Program Files\Common Files\VST3`.
 
 ## Status / roadmap
-- [x] P0 prototype: engine, macros, 8 patches, CLI, tests, VST3 (passes pluginval strictness 7)
+- [x] P0 prototype: engine, macros, 11 patches, CLI, tests, VST3 (passes pluginval strictness 7)
 - [x] Test VST3/Standalone with Greg's Yamaha DGX670 on Windows (2026-11-15): sustain pedal (CC64) + `sustain` module, voice-retrigger fix, right-click structure view, optional ASIO (`-DZIRCON_ASIO_SDK=<path>`) all verified
 - [ ] P1 plugin: CLAP, sample-accurate automation, MIDI clock/transport, audio in/multi-out, MPE
 - [~] P2 structure editor: MVP done (right-click > Show structure: drag-wire, add/delete modules, set constants, live recompile, save JSON; `plugin/StructureView.cpp`). Still to do: GPU node graph, macro open/edit, live scopes, inline module docs, undo
 - [~] P3 showcase synths done (`09` DX e-piano, `10` Ladder Lead, `LadderLP` macro; `tools/gen_showcase.py`). Still to do: panel view + preset browser
 - [ ] P4 `.sm` importer + cleared patch archive as demos
 - [ ] P5 AI designer
-- [ ] Perf: Zircon Lattice runs ~6x realtime at 8 voices (interpreter). Next: SIMD lanes, then JIT
+- [ ] Perf: Zircon Lattice runs ~2-3x realtime at 8 voices (interpreter). Next: SIMD lanes, then JIT

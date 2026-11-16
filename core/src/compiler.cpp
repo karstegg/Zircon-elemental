@@ -383,7 +383,7 @@ Program compilePatch(const std::string& text, const MacroLibrary& lib) {
         if (s->op == Op::Delay) {
             I.slot = (int)prog.delays.size();
             I.state = prog.stateFloats; prog.stateFloats += 1;   // last delay time (read uses previous sample's time)
-            prog.delays.push_back({std::fmax(0.001f, fn.params.value("max", 1.f))});
+            prog.delays.push_back({std::clamp(fn.params.value("max", 1.f), 0.001f, 10.f)});   // bound the allocation
             prog.code.push_back(I);
             Instr W; W.op = Op::DelayWrite; W.slot = I.slot; W.state = I.state; W.node = fn.id + ":write";
             W.p0 = (float)n;  // node index stash
