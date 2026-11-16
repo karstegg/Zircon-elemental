@@ -74,7 +74,7 @@ ZirconEditor::ZirconEditor(ZirconProcessor& p) : AudioProcessorEditor(p), proc_(
     updateMode();
     setResizable(true, true);
     setResizeLimits(520, 300, 1600, 1000);
-    setSize(760, 420);
+    if (proc_.dx7Active()) setSize(Dx7Panel::kWidth + 40, 800); else setSize(760, 420);
     startTimerHz(15);
 }
 
@@ -100,7 +100,7 @@ void ZirconEditor::updateMode() {
         dx_ = std::make_unique<Dx7Panel>(proc_);
         dxView_.setViewedComponent(dx_.get(), false);
         dxView_.setScrollBarsShown(true, false);
-        if (!dxView_.isVisible() && getWidth() < Dx7Panel::kWidth + 40) setSize(Dx7Panel::kWidth + 40, 840);
+        if (!dxView_.isVisible() && getWidth() < Dx7Panel::kWidth + 40) setSize(Dx7Panel::kWidth + 40, 800);
     } else {
         dxView_.setViewedComponent(nullptr, false);
         dx_.reset();

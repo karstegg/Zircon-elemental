@@ -12,6 +12,14 @@ ZirconProcessor::ZirconProcessor()
         addParameter(p);
         lastSent_[i] = -1.f;
     }
+    static const char* fxNames[kFxParams] = {"Delay Time", "Delay Feedback", "Delay Mix", "Reverb Size", "Reverb Damping", "Reverb Mix"};
+    static const float fxDefaults[kFxParams] = {0.45f, 0.35f, 0.0f, 0.5f, 0.5f, 0.12f};
+    for (int i = 0; i < kFxParams; ++i) {
+        auto* p = new juce::AudioParameterFloat(juce::ParameterID{"fx" + juce::String(i + 1), 1}, fxNames[i],
+                                                juce::NormalisableRange<float>(0.f, 1.f), fxDefaults[i]);
+        fxParams_[(size_t)i] = p;
+        addParameter(p);
+    }
     // embedded macro library + factory patches
     for (int i = 0; i < BinaryData::namedResourceListSize; ++i) {
         int size = 0;
@@ -34,6 +42,10 @@ bool ZirconProcessor::isBusesLayoutSupported(const BusesLayout& l) const {
 
 void ZirconProcessor::prepareToPlay(double sr, int) {
     sampleRate_ = sr;
+    reverb_.setSampleRate(sr);
+    reverb_.reset();
+    for (auto& b : dlBuf_) b.assign((size_t)(sr * 1.2) + 8, 0.f);
+    dlPos_ = 0;
     const juce::SpinLock::ScopedLockType sl(lock_);
     if (engine_) engine_->prepare(sr);
 }
@@ -190,8 +202,43 @@ void ZirconProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
         else if (m.isPitchWheel()) eng.setPitchBend((m.getPitchWheelValue() - 8192) / 8192.f * 2.f);
     }
     if (pos < n) eng.process(L + pos, R + pos, n - pos);
+    applyFx(L, R, n);
     voicesActive_ = eng.activeVoices();
     peak_ = std::max(buffer.getMagnitude(0, 0, n), peak_.load() * 0.9f);
+}
+
+void ZirconProcessor::applyFx(float* L, float* R, int n) {
+    const float dTime = 0.02f * std::pow(50.f, fxParams_[0]->getValue());   // 20 ms .. 1 s
+    const float dFb = fxParams_[1]->getValue() * 0.9f;
+    const float dMix = fxParams_[2]->getValue();
+    if (!dlBuf_[0].empty() && (dMix > 0.001f || dlTime_ > 0.f)) {
+        const int size = (int)dlBuf_[0].size();
+        const float sr = (float)sampleRate_;
+        for (int i = 0; i < n; ++i) {
+            dlTime_ += (dTime - dlTime_) * 0.0005f;
+            float rp = (float)dlPos_ - dlTime_ * sr;
+            while (rp < 0) rp += (float)size;
+            const int i0 = (int)rp % size, i1 = (i0 + 1) % size;
+            const float fr = rp - std::floor(rp);
+            const float dl = dlBuf_[0][(size_t)i0] * (1 - fr) + dlBuf_[0][(size_t)i1] * fr;
+            const float dr = dlBuf_[1][(size_t)i0] * (1 - fr) + dlBuf_[1][(size_t)i1] * fr;
+            // ping-pong: left feeds right and vice versa
+            dlBuf_[0][(size_t)dlPos_] = L[i] + dr * dFb;
+            dlBuf_[1][(size_t)dlPos_] = R[i] + dl * dFb;
+            L[i] += dl * dMix;
+            R[i] += dr * dMix;
+            if (++dlPos_ >= size) dlPos_ = 0;
+        }
+    }
+    const float rMix = fxParams_[5]->getValue();
+    juce::Reverb::Parameters rp;
+    rp.roomSize = fxParams_[3]->getValue();
+    rp.damping = fxParams_[4]->getValue();
+    rp.wetLevel = rMix * 0.5f;
+    rp.dryLevel = 1.f - rMix * 0.3f;
+    rp.width = 1.f;
+    reverb_.setParameters(rp);
+    reverb_.processStereo(L, R, n);
 }
 
 void ZirconProcessor::getStateInformation(juce::MemoryBlock& dest) {
@@ -206,6 +253,7 @@ void ZirconProcessor::getStateInformation(juce::MemoryBlock& dest) {
         st.setProperty("cart", juce::Base64::toBase64(zircon::dx7::toSysex(cart_).data(), 4104), nullptr);
     }
     for (int i = 0; i < kHostParams; ++i) st.setProperty("p" + juce::String(i + 1), hostParams_[i]->getValue(), nullptr);
+    for (int i = 0; i < kFxParams; ++i) st.setProperty("fx" + juce::String(i + 1), fxParams_[(size_t)i]->getValue(), nullptr);
     juce::MemoryOutputStream os(dest, false);
     st.writeToStream(os);
 }
@@ -225,6 +273,9 @@ void ZirconProcessor::setStateInformation(const void* data, int size) {
     }
     pendingDx7_ = st.getProperty("dx7voice").toString();
     loadPatchText(st.getProperty("patch").toString());
+    for (int i = 0; i < kFxParams; ++i)
+        if (st.hasProperty("fx" + juce::String(i + 1)))
+            fxParams_[(size_t)i]->setValueNotifyingHost(st.getProperty("fx" + juce::String(i + 1)));
     for (int i = 0; i < kHostParams; ++i)
         if (st.hasProperty("p" + juce::String(i + 1)))
             hostParams_[i]->setValueNotifyingHost(st.getProperty("p" + juce::String(i + 1)));

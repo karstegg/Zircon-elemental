@@ -8,6 +8,7 @@
 class ZirconProcessor : public juce::AudioProcessor {
 public:
     static constexpr int kHostParams = 16;
+    static constexpr int kFxParams = 6;   // delay time/feedback/mix, reverb size/damp/mix (global, all instruments)
 
     ZirconProcessor();
     ~ZirconProcessor() override = default;
@@ -63,6 +64,7 @@ public:
     int mappedParamCount() const;
     juce::String mappedParamName(int slot) const;
     juce::RangedAudioParameter* hostParam(int slot) { return hostParams_[slot]; }
+    juce::RangedAudioParameter* fxParam(int i) { return fxParams_[(size_t)i]; }
     int activeVoices() const { return voicesActive_.load(); }
     float peakLevel() const { return peak_.load(); }
 
@@ -86,6 +88,12 @@ private:
     double sampleRate_ = 48000.0;
 
     std::array<juce::RangedAudioParameter*, kHostParams> hostParams_{};
+    std::array<juce::RangedAudioParameter*, kFxParams> fxParams_{};
+    juce::Reverb reverb_;
+    std::vector<float> dlBuf_[2];
+    int dlPos_ = 0;
+    float dlTime_ = 0.3f;     // smoothed delay time, seconds
+    void applyFx(float* L, float* R, int n);
     std::array<float, kHostParams> lastSent_{};
     std::atomic<int> voicesActive_{0};
     std::atomic<float> peak_{0.f};
