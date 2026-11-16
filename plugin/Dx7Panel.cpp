@@ -51,7 +51,6 @@ std::vector<OpRow> makeOpRows() {
 } // namespace
 
 Dx7Panel::Dx7Panel(ZirconProcessor& p) : proc_(p) {
-    setSize(kWidth, kHeight);
     auto style = [&](juce::Component& c) { addAndMakeVisible(c); };
 
     // ---- global voice parameters
@@ -159,6 +158,8 @@ Dx7Panel::Dx7Panel(ZirconProcessor& p) : proc_(p) {
     style(status_);
 
     proc_.onCartChanged = [this] { refresh(); };
+    built_ = true;
+    setSize(kWidth, kHeight);
     refresh();
 }
 
@@ -209,6 +210,7 @@ void Dx7Panel::refresh() {
 }
 
 void Dx7Panel::resized() {
+    if (!built_) return;
     int x = 12;
     cartLabel_.setBounds(x, kRow1Y, 90, 26);
     voices_.setBounds(100, kRow1Y, 250, 26);

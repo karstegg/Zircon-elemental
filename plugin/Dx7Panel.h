@@ -29,6 +29,7 @@ private:
     void drawEnvelope(juce::Graphics&, juce::Rectangle<float>, const int* rate, const int* level);
 
     ZirconProcessor& proc_;
+    bool built_ = false;
     zircon::dx7::Voice v_;
     std::vector<std::unique_ptr<Cell>> cells_;
     Cell* algo_ = nullptr;
