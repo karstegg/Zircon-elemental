@@ -8,7 +8,7 @@
 class ZirconProcessor : public juce::AudioProcessor {
 public:
     static constexpr int kHostParams = 16;
-    static constexpr int kFxParams = 6;   // delay time/feedback/mix, reverb size/damp/mix (global, all instruments)
+    static constexpr int kFxParams = 9;   // delay time/feedback/mix, reverb size/damp/mix, chorus rate/depth/mix (global, all instruments)
 
     ZirconProcessor();
     ~ZirconProcessor() override = default;
@@ -98,6 +98,10 @@ private:
     std::vector<float> dlBuf_[2];
     int dlPos_ = 0;
     float dlTime_ = 0.3f;     // smoothed delay time, seconds
+    std::vector<float> chBuf_[2];   // chorus delay lines (50 ms)
+    int chPos_ = 0;
+    double chPhase_ = 0.0;          // chorus LFO phase, cycles (kept running while bypassed)
+    float chDepth_ = 0.5f, chMix_ = 0.f;   // smoothed chorus depth / mix
     void applyFx(float* L, float* R, int n);
     std::array<float, kHostParams> lastSent_{};
     std::atomic<int> voicesActive_{0};

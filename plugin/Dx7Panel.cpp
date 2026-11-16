@@ -225,9 +225,16 @@ Dx7Panel::Dx7Panel(ZirconProcessor& p) : proc_(p) {
     // ---------------- MASTER / FX + OUTPUT (host-automatable)
     for (int i = 0; i < std::min(4, proc_.mappedParamCount()); ++i)
         hostKnob(proc_.hostParam(i), proc_.mappedParamName(i), 24 + i * 110, 30);
-    static const char* fxn[6] = {"Time", "Feedback", "Mix", "Size", "Damping", "Mix"};
-    for (int i = 0; i < 3; ++i) hostKnob(proc_.fxParam(i), fxn[i], 24 + i * 110, 215);
-    for (int i = 0; i < 3; ++i) hostKnob(proc_.fxParam(3 + i), fxn[3 + i], 540 + i * 110, 215);
+    static const char* fxn[9] = {"Time", "Feedback", "Mix", "Size", "Damping", "Mix", "Rate", "Depth", "Mix"};
+    for (int i = 0; i < 3; ++i) hostKnob(proc_.fxParam(i), fxn[i], 24 + i * 100, 215);
+    HostCtl* chorusRate = nullptr;
+    for (int i = 0; i < 3; ++i) {
+        auto* k = hostKnob(proc_.fxParam(6 + i), fxn[6 + i], 340 + i * 100, 215);
+        if (i == 0) chorusRate = k;
+    }
+    for (int i = 0; i < 3; ++i) hostKnob(proc_.fxParam(3 + i), fxn[3 + i], 656 + i * 100, 215);
+    chorusRate->textFromValueFunction = [](double v) { return juce::String(0.1 * std::pow(50.0, v), 2) + " Hz"; };
+    chorusRate->updateText();
 
     // ---------------- header: nav + cartridge
     for (int i = 0; i < 7; ++i) {
@@ -677,12 +684,13 @@ void Dx7Panel::paint(juce::Graphics& g) {
         drawEnvelope(g, {24.f, (float)cy + 250.f, 560.f, 180.f}, v_.prate, v_.plevel, false);
     } else if (top == 0) {
         groupTitle(g, "Macro knobs", 24, cy + 6, 470);
-        groupTitle(g, "Delay", 24, cy + 190, 330);
-        groupTitle(g, "Reverb", 540, cy + 190, 330);
+        groupTitle(g, "Delay", 24, cy + 190, 290);
+        groupTitle(g, "Chorus", 340, cy + 190, 290);
+        groupTitle(g, "Reverb", 656, cy + 190, 290);
         g.setColour(kDim);
         g.setFont(sans(11.5f));
         g.drawFittedText("The four macros are the patch's own knobs (Level, Bright = modulation depth, EG Speed, Vibrato). "
-                         "Delay and reverb are global effects: they apply to every instrument and are host-automatable.",
+                         "Chorus, delay and reverb are global effects (in that order): they apply to every instrument and are host-automatable.",
                          juce::Rectangle<int>(540, cy + 30, 430, 70), juce::Justification::topLeft, 4);
     } else if (curSub_ == 0) {
         groupTitle(g, "Operator " + juce::String(curTop_) + " tuning", 24, cy + 6, 460);

@@ -22,8 +22,9 @@ ZirconProcessor::ZirconProcessor()
         addParameter(p);
         lastSent_[i] = -1.f;
     }
-    static const char* fxNames[kFxParams] = {"Delay Time", "Delay Feedback", "Delay Mix", "Reverb Size", "Reverb Damping", "Reverb Mix"};
-    static const float fxDefaults[kFxParams] = {0.45f, 0.35f, 0.0f, 0.5f, 0.5f, 0.12f};
+    static const char* fxNames[kFxParams] = {"Delay Time", "Delay Feedback", "Delay Mix", "Reverb Size", "Reverb Damping", "Reverb Mix",
+                                          "Chorus Rate", "Chorus Depth", "Chorus Mix"};
+    static const float fxDefaults[kFxParams] = {0.45f, 0.35f, 0.0f, 0.5f, 0.5f, 0.12f, 0.3f, 0.5f, 0.0f};
     for (int i = 0; i < kFxParams; ++i) {
         auto* p = new juce::AudioParameterFloat(juce::ParameterID{"fx" + juce::String(i + 1), 1}, fxNames[i],
                                                 juce::NormalisableRange<float>(0.f, 1.f), fxDefaults[i]);
@@ -58,6 +59,11 @@ void ZirconProcessor::prepareToPlay(double sr, int) {
     reverb_.reset();
     for (auto& b : dlBuf_) b.assign((size_t)(sr * 1.2) + 8, 0.f);
     dlPos_ = 0;
+    for (auto& b : chBuf_) b.assign((size_t)(sr * 0.05) + 8, 0.f);
+    chPos_ = 0;
+    chPhase_ = 0.0;
+    chDepth_ = fxParams_[7]->getValue();
+    chMix_ = fxParams_[8]->getValue();
     pendingMidi_.clear();
     pendingMidiCount_ = 0;
     const juce::SpinLock::ScopedLockType sl(lock_);
@@ -288,6 +294,42 @@ void ZirconProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiB
 }
 
 void ZirconProcessor::applyFx(float* L, float* R, int n) {
+    // chorus first: per-channel modulated delay, 7.5 ms +- up to 5 ms, L/R LFOs 90 deg apart.
+    // The lines are always written and the LFO always advances (cheap), so raising Mix from 0 never reads stale audio;
+    // only the interpolated reads and the sin() are skipped while the smoothed mix is ~0.
+    if (!chBuf_[0].empty()) {
+        const float cDepth = fxParams_[7]->getValue();
+        const float cMix = fxParams_[8]->getValue();
+        const bool active = cMix > 0.001f || chMix_ > 0.001f;
+        const int size = (int)chBuf_[0].size();
+        const float sr = (float)sampleRate_;
+        const double inc = 0.1 * std::pow(50.0, (double)fxParams_[6]->getValue()) / sampleRate_;   // 0.1 .. 5 Hz
+        for (int i = 0; i < n; ++i) {
+            chBuf_[0][(size_t)chPos_] = L[i];
+            chBuf_[1][(size_t)chPos_] = R[i];
+            if (active) {
+                chDepth_ += (cDepth - chDepth_) * 0.002f;
+                chMix_ += (cMix - chMix_) * 0.002f;
+                float wet[2];
+                for (int c = 0; c < 2; ++c) {
+                    const float lfo = std::sin(juce::MathConstants<float>::twoPi * (float)(chPhase_ + 0.25 * c));
+                    const float d = (0.0075f + 0.005f * chDepth_ * lfo) * sr;   // samples, always > 2.5 ms
+                    float rp = (float)chPos_ - d;
+                    if (rp < 0) rp += (float)size;
+                    int i0 = (int)rp;
+                    if (i0 >= size) i0 -= size;   // rp just below size can round up to size in float
+                    const int i1 = (i0 + 1) % size;
+                    const float fr = rp - (float)i0;
+                    wet[c] = chBuf_[(size_t)c][(size_t)i0] * (1 - fr) + chBuf_[(size_t)c][(size_t)i1] * fr;
+                }
+                L[i] = L[i] * (1.f - 0.5f * chMix_) + wet[0] * chMix_ * 0.7f;
+                R[i] = R[i] * (1.f - 0.5f * chMix_) + wet[1] * chMix_ * 0.7f;
+            }
+            chPhase_ += inc;
+            if (chPhase_ >= 1.0) chPhase_ -= 1.0;
+            if (++chPos_ >= size) chPos_ = 0;
+        }
+    }
     const float dTime = 0.02f * std::pow(50.f, fxParams_[0]->getValue());   // 20 ms .. 1 s
     const float dFb = fxParams_[1]->getValue() * 0.9f;
     const float dMix = fxParams_[2]->getValue();
