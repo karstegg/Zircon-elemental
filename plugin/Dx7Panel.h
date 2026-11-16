@@ -74,7 +74,7 @@ private:
     std::vector<std::unique_ptr<HostCtl>> hosts_;
 
     juce::TextButton topBtn_[7], subBtn_[3];
-    juce::TextButton prev_{"<"}, next_{">"}, load_{"LOAD SYX"}, save_{"SAVE SYX"}, init_{"INIT"};
+    juce::TextButton prev_{"<"}, next_{">"}, load_{"LOAD SYX"}, save_{"SAVE SYX"}, init_{"INIT"}, factory_{"FACTORY"};
     juce::ComboBox voices_;
     juce::TextEditor name_;
     juce::Label status_;

@@ -50,6 +50,7 @@ public:
     void selectCartVoice(int i);                          // store pending edit, then switch
     void storeToCart();                                   // write the live voice into its slot
     void initDx7Voice();
+    void restoreFactoryCart();
     std::function<void()> onCartChanged;
 
     juce::String patchName() const;

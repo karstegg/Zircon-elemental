@@ -153,6 +153,14 @@ void ZirconProcessor::selectCartVoice(int i) {
     setDx7Voice(cart_[(size_t)i]);
 }
 
+void ZirconProcessor::restoreFactoryCart() {
+    if (factoryCart_.empty()) return;
+    cart_ = factoryCart_;
+    padCart();
+    cartIndex_ = 0;
+    setDx7Voice(cart_[0]);
+}
+
 void ZirconProcessor::initDx7Voice() {
     zircon::dx7::Voice v;
     v.op[0].ol = 99;
@@ -261,6 +269,7 @@ void ZirconProcessor::getStateInformation(juce::MemoryBlock& dest) {
         for (int x : zircon::dx7::toUnpacked(dx7Voice())) t << x << " ";
         st.setProperty("dx7voice", t, nullptr);
         st.setProperty("cartidx", cartIndex_, nullptr);
+        st.setProperty("cartv", 2, nullptr);
         st.setProperty("cart", juce::Base64::toBase64(zircon::dx7::toSysex(cart_).data(), 4104), nullptr);
     }
     for (int i = 0; i < kHostParams; ++i) st.setProperty("p" + juce::String(i + 1), hostParams_[i]->getValue(), nullptr);
@@ -273,7 +282,8 @@ void ZirconProcessor::setStateInformation(const void* data, int size) {
     auto st = juce::ValueTree::readFromData(data, (size_t)size);
     if (!st.isValid()) return;
     currentProgram_ = juce::jlimit(0, std::max(0, factory_.size() - 1), (int)st.getProperty("program", 0));
-    if (st.hasProperty("cart")) {
+    // states saved before the single-instrument cartridge (no "cartv") may hold a stale one-voice cart: use the factory cart
+    if (st.hasProperty("cart") && (int)st.getProperty("cartv", 0) >= 2) {
         juce::MemoryOutputStream mo;
         if (juce::Base64::convertFromBase64(mo, st.getProperty("cart").toString())) {
             auto* d = (const uint8_t*)mo.getData();

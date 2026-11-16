@@ -290,7 +290,8 @@ Dx7Panel::Dx7Panel(ZirconProcessor& p) : proc_(p) {
                               });
     };
     init_.onClick = [this] { proc_.initDx7Voice(); refresh(); };
-    for (auto* b : {&prev_, &next_, &load_, &save_, &init_}) addAndMakeVisible(*b);
+    factory_.onClick = [this] { proc_.restoreFactoryCart(); refresh(); };
+    for (auto* b : {&prev_, &next_, &load_, &save_, &init_, &factory_}) addAndMakeVisible(*b);
 
     name_.setInputRestrictions(10);
     name_.setFont(mono(26.f));
@@ -446,9 +447,10 @@ void Dx7Panel::resized() {
     prev_.setBounds(716, 14, 38, 28);
     next_.setBounds(758, 14, 38, 28);
     voices_.setBounds(802, 14, 186, 28);
-    load_.setBounds(716, 50, 90, 28);
-    save_.setBounds(812, 50, 90, 28);
-    init_.setBounds(908, 50, 80, 28);
+    load_.setBounds(716, 50, 64, 28);
+    save_.setBounds(784, 50, 64, 28);
+    init_.setBounds(852, 50, 52, 28);
+    factory_.setBounds(908, 50, 80, 28);
     status_.setBounds(716, 82, 272, 18);
     for (int i = 0; i < 7; ++i) topBtn_[i].setBounds(24 + i * 138, 116, 132, 30);
     for (int i = 0; i < 3; ++i) subBtn_[i].setBounds(24 + i * 184, 154, 178, 28);
